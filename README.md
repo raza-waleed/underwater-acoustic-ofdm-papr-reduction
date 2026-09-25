@@ -1,5 +1,7 @@
 # PAPR Reduction and Neural Network Distortion Removal for Underwater Acoustic OFDM
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22949942.svg)](https://doi.org/10.5281/zenodo.22949942)
+
 My M.Eng. thesis work at Harbin Engineering University (2018 to 2021). Battery powered
 underwater acoustic modems lose much of their energy in the transmit power amplifier,
 because OFDM peaks sit about 11 dB above the average power. My thesis attacked that
@@ -74,6 +76,22 @@ figures/                     generated figures
 
 - BELLHOP (Michael B. Porter's Acoustics Toolbox): cited, not redistributed.
 - The thesis document itself: summarised on the page, not published here.
+
+## Citing this work
+
+To cite this archived release, cite the Zenodo record:
+
+```bibtex
+@software{raza2026paprreduction,
+  author    = {Raza, Waleed},
+  title     = {raza-waleed/underwater-acoustic-ofdm-papr-reduction: v1.0.0 (PAPR reduction and neural network receiver)},
+  year      = {2026},
+  publisher = {Zenodo},
+  version   = {v1.0.0},
+  doi       = {10.5281/zenodo.22949942},
+  url       = {https://doi.org/10.5281/zenodo.22949942}
+}
+```
 
 ## Related reports in this portfolio
 
