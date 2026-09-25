@@ -43,7 +43,7 @@ SITE_NAV = """<nav class="topnav">
 <span></span><span></span><span></span>
 </button>
 <ul>
-<li><a href='/#about'>About</a></li>
+<li><a href='/#about'>Home</a></li>
 <li><a href='/#research'>Research</a></li>
 <li><a href='/simulations'>Simulations</a></li>
 <li><a href='/route-planning'>Routes</a></li>
