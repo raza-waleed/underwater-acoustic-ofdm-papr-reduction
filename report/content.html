@@ -1,0 +1,459 @@
+<header class="sim-hero" id="top">
+<div class="wrap">
+<a class="back-link" href="{{acoustics_url}}">&larr; Underwater Acoustic Engineering</a>
+<p class="eyebrow"><span class="dot"></span> M.Eng. Thesis &middot; Harbin Engineering University &middot; 2018 to 2021</p>
+<h1>PAPR Reduction and Neural Network Distortion Removal for Underwater Acoustic OFDM</h1>
+<p class="summary">
+Battery powered underwater acoustic modems spend much of their energy in the transmit power amplifier, and
+OFDM makes that amplifier inefficient: its peaks sit about 11 dB above the average power, so the amplifier has
+to run far below saturation. My M.Eng. thesis attacked the problem from both ends of the link. At the
+transmitter I reduced the peak-to-average power ratio (PAPR) with repeated clipping and filtering and a rooting
+companding transform, alongside the selected mapping and partial transmit sequence methods from my published
+papers. At the receiver I trained a small neural network to learn the power amplifier and removed its
+distortion by <strong style="color:var(--text);">frequentative decision feedback (FFB)</strong>. Every result on
+this page comes from the open implementation of this work, and the lab runs the same engine live in your browser.
+</p>
+<div class="stack-row">
+<span class="badge">OFDM PAPR Reduction</span>
+<span class="badge">Clipping &amp; Filtering</span>
+<span class="badge">SLM &amp; PTS</span>
+<span class="badge">Neural Network Receiver</span>
+<span class="badge">BELLHOP Channel</span>
+<span class="badge">22 Unit Tests</span>
+</div>
+<a class="btn solid" href="#lab">Open the interactive lab</a>
+<a class="btn" href="{{repo_url}}" target="_blank" rel="noopener">View the code on GitHub</a>{{doi_button}}
+</div>
+</header>
+
+<section id="approach">
+<div class="wrap">
+<h2 data-index="01">The Problem and My Approach</h2>
+<div class="prose">
+<p>Underwater sensor networks watch the ocean for months at a time on battery power: moored oceanographic
+sensors, seabed stations, autonomous vehicles and gliders, environmental monitors and subsea oil and gas
+equipment. Radio fades within metres in seawater, so these systems talk with sound, and the power amplifier
+that drives the transmitting transducer is one of the largest energy costs in the modem. Every decibel it
+wastes shortens how long a deployment can last.</p>
+<p>OFDM is the modulation of choice for high rate underwater links because it turns a long, frequency selective
+multipath channel into hundreds of narrow subcarriers that are each easy to equalise. Its weakness is the
+peak-to-average power ratio: the inverse FFT adds hundreds of subcarriers together, and now and then they line up
+into a peak far above the average. The amplifier must stay linear at those peaks, so it spends most of its time
+backed off, where it is inefficient. An ideal class B amplifier averages 78.5% efficiency at full drive but only
+about {{cmp_eff_orig}}% when backed off by the {{cmp_orig}} dB an OFDM signal needs.</p>
+<p>My goal was a low complexity, energy efficient OFDM system for battery powered underwater modems, and I
+worked on both ends of the link:</p>
+</div>
+<div class="concept-grid two">
+<div class="concept-card reveal" style="--card-color:var(--accent);">
+<span class="concept-tag">Transmitter &middot; Chapter 3</span>
+<h3>Repeated Clipping and Filtering</h3>
+<p>Clip every peak above a threshold, filter the regrowth out of the band, repeat. I studied how the clipping ratio, oversampling factor and pilot layout trade PAPR against bit error rate for underwater acoustic OFDM.</p>
+<span class="result">{{rcf_original}} to {{rcf_p4}} dB in four passes</span>
+</div>
+<div class="concept-card reveal" style="--card-color:#a78bfa;">
+<span class="concept-tag">Transmitter &middot; Chapter 3</span>
+<h3>Rooting Companding</h3>
+<p>A power law compander |x|<sup>R</sup> that keeps the phase, with exponents from 0.1 to 0.9 and the inverse applied at the receiver.</p>
+<span class="result">R = 0.5: {{rct_L4_orig}} to {{rct_R05}} dB</span>
+</div>
+<div class="concept-card reveal" style="--card-color:#00e68a;">
+<span class="concept-tag">Transmitter &middot; Published</span>
+<h3>Selected Mapping and PTS</h3>
+<p>Distortionless methods from my published papers: transmit the best of several phase rotated copies of each symbol and send a few bits of side information.</p>
+<span class="result">SLM, 16 candidates: {{slm_u1}} to {{slm_u16}} dB</span>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Receiver &middot; Chapter 4</span>
+<h3>Neural Network Receiver</h3>
+<p>A 6-12-6 network learns the power amplifier from measured samples, and frequentative decision feedback uses it to estimate and subtract the amplifier's distortion.</p>
+<span class="result">{{bh3_ratio}}x fewer bit errors at 3 dB back-off</span>
+</div>
+</div>
+<figure class="fig reveal" id="fig1">
+<svg class="diagram" viewBox="0 0 900 290" role="img" aria-label="Block diagram of the OFDM link with PAPR reduction at the transmitter and FFB at the receiver">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8695a8"/></marker></defs>
+<text x="20" y="26" class="dg-head">TRANSMITTER</text>
+<text x="20" y="186" class="dg-head">RECEIVER</text>
+<g class="dg-box"><rect x="20" y="40" width="70" height="52" rx="5"/><text x="55" y="70">Data bits</text></g>
+<g class="dg-box"><rect x="112" y="40" width="92" height="52" rx="5"/><text x="158" y="62">QAM</text><text x="158" y="79" class="dg-small">mapper</text></g>
+<g class="dg-box"><rect x="226" y="40" width="104" height="52" rx="5"/><text x="278" y="62">IFFT</text><text x="278" y="79" class="dg-small">oversampled x I</text></g>
+<g class="dg-box hi-amber"><rect x="352" y="40" width="160" height="52" rx="5"/><text x="432" y="62">PAPR reduction</text><text x="432" y="79" class="dg-small">RCF, RCT, SLM or PTS</text></g>
+<g class="dg-box"><rect x="534" y="40" width="84" height="52" rx="5"/><text x="576" y="62">Clipper</text><text x="576" y="79" class="dg-small">optional</text></g>
+<g class="dg-box hi-amber"><rect x="640" y="40" width="120" height="52" rx="5"/><text x="700" y="62">Power amplifier</text><text x="700" y="79" class="dg-small">Rapp SSPA</text></g>
+<g class="dg-box"><rect x="782" y="40" width="98" height="52" rx="5"/><text x="831" y="62">Transducer</text><text x="831" y="79" class="dg-small">7.9 to 14.1 kHz</text></g>
+<g class="dg-box hi-cyan"><rect x="560" y="116" width="320" height="44" rx="5"/><text x="720" y="136">BELLHOP channel, 2 km, 23 paths</text><text x="720" y="152" class="dg-small">plus white noise at the hydrophone</text></g>
+<g class="dg-box"><rect x="782" y="200" width="98" height="52" rx="5"/><text x="831" y="222">Hydrophone</text><text x="831" y="239" class="dg-small">FFT, 512 bins</text></g>
+<g class="dg-box"><rect x="652" y="200" width="108" height="52" rx="5"/><text x="706" y="222">Equalise</text><text x="706" y="239" class="dg-small">Y / H, known H</text></g>
+<g class="dg-box hi-green"><rect x="262" y="200" width="368" height="72" rx="5"/><text x="446" y="222">Frequentative decision feedback (FFB)</text><text x="446" y="241" class="dg-small">decide, reconstruct the transmitted signal, run it through the</text><text x="446" y="257" class="dg-small">learned 6-12-6 amplifier network, subtract the distortion, repeat</text></g>
+<g class="dg-box"><rect x="112" y="200" width="128" height="52" rx="5"/><text x="176" y="222">Decisions</text><text x="176" y="239" class="dg-small">QAM demapper</text></g>
+<g class="dg-box"><rect x="20" y="200" width="70" height="52" rx="5"/><text x="55" y="230">Data bits</text></g>
+<g class="dg-arrow">
+<line x1="90" y1="66" x2="110" y2="66"/><line x1="204" y1="66" x2="224" y2="66"/><line x1="330" y1="66" x2="350" y2="66"/>
+<line x1="512" y1="66" x2="532" y2="66"/><line x1="618" y1="66" x2="638" y2="66"/><line x1="760" y1="66" x2="780" y2="66"/>
+<line x1="831" y1="92" x2="831" y2="114"/><line x1="831" y1="160" x2="831" y2="198"/>
+<line x1="782" y1="226" x2="762" y2="226"/><line x1="652" y1="226" x2="632" y2="226"/>
+<line x1="262" y1="226" x2="242" y2="226"/><line x1="112" y1="226" x2="92" y2="226"/>
+</g>
+</svg>
+<figcaption><b>Figure 1.</b> The link I studied. Amber blocks are where PAPR is created or reduced, blue is the ocean channel, green is the receiver side distortion removal.</figcaption>
+</figure>
+<h3 class="subhead">Results at a glance</h3>
+<div class="stat-grid">
+<div class="stat-card reveal"><div class="num">{{rcf_gain}} dB</div><div class="lbl">PAPR removed by four clip and filter passes</div></div>
+<div class="stat-card reveal"><div class="num amber">{{eff_rcf}}%</div><div class="lbl">Ideal class B efficiency, up from {{eff_orig}}%</div></div>
+<div class="stat-card reveal"><div class="num">{{bh3_ratio}}x</div><div class="lbl">Fewer bit errors with FFB at 3 dB back-off</div></div>
+<div class="stat-card reveal"><div class="num amber">{{eff3}}%</div><div class="lbl">Amplifier efficiency at the back-off FFB allows</div></div>
+<div class="stat-card reveal"><div class="num">22</div><div class="lbl">Unit tests behind these numbers</div></div>
+</div>
+</div>
+</section>
+
+<section id="lab">
+<div class="wrap wide">
+<h2 data-index="02">Interactive Lab</h2>
+<p class="section-lead">
+The <strong style="color:var(--text);">Transmitter</strong> view generates random OFDM symbols and applies the method
+you pick; the PAPR distribution, amplifier efficiency, distortion and spectrum update as symbols accumulate. The
+<strong style="color:var(--text);">Receiver</strong> view runs the whole link, amplifier, channel, noise and FFB, with
+the neural network weights trained in Python. The <strong style="color:var(--text);">Channel</strong> view shows the
+BELLHOP multipath and the guard interval it calls for.
+</p>
+<div id="papr-lab" class="plab-root">
+<div class="plab-loading">Loading the lab&hellip;</div>
+<noscript><div class="plab-loading">The lab needs JavaScript. The figures below show the same results.</div></noscript>
+</div>
+</div>
+</section>
+
+<section id="papr">
+<div class="wrap">
+<h2 data-index="03">OFDM Peaks and How They Are Measured</h2>
+<div class="prose">
+<p>An OFDM symbol is the inverse FFT of N data symbols X<sub>k</sub>. When N is large, the time samples behave like
+complex Gaussian noise, so their power follows an exponential distribution and a few samples are much stronger
+than the rest. The PAPR of one symbol is its peak sample power over its mean power, and because it changes from
+symbol to symbol it is reported as a complementary cumulative distribution function (CCDF), Pr[PAPR &gt; z].
+Every PAPR on this page is read at CCDF 10<sup>-3</sup>: the level exceeded by one symbol in a thousand.</p>
+</div>
+<div class="equation">PAPR = max<sub>n</sub> |x[n]|<sup>2</sup> / E|x[n]|<sup>2</sup> &nbsp;&nbsp;&nbsp; CCDF(z) &asymp; 1 &minus; (1 &minus; e<sup>&minus;z</sup>)<sup>N</sup></div>
+<div class="prose">
+<p>The closed form treats the N Nyquist rate samples as independent. The transmitted analogue signal peaks
+between those samples, so PAPR has to be measured on an oversampled signal: I zero pad the middle of the
+spectrum by a factor I before the IFFT, with I = 4 whenever accurate peaks matter.</p>
+</div>
+<div class="chip-row">
+<span class="chip">Chapter 3: 128 subcarriers, QPSK</span><span class="chip">Chapter 4: 512 subcarriers in 6.25 kHz</span>
+<span class="chip">FFT 8192 at 100 kHz</span><span class="chip">Band 7.9 to 14.1 kHz around 11 kHz</span><span class="chip">{{symbols_basics}} symbols per curve</span>
+</div>
+<figure class="fig reveal" id="fig2"><img src="{{fig}}papr_ccdf_basics.png" alt="CCDF of OFDM PAPR for 64, 256 and 1024 subcarriers" loading="lazy"><figcaption><b>Figure 2.</b> PAPR distribution for three OFDM sizes, oversampled (solid) and at the Nyquist rate (dashed), with the closed form (dotted).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>At CCDF 10<sup>-3</sup> the PAPR is {{n128_L4}} dB for 128 subcarriers and {{n512_L4}} dB for 512,
+measured with fourfold oversampling. Sampling at the Nyquist rate underestimates it by {{oversampling_gap_min}} to
+{{oversampling_gap_max}} dB, and at the Nyquist rate the simulation agrees with the closed form to within {{theory_gap_max}} dB
+for every size from 64 to 1024.</div>
+<div class="prose">
+<p>Why the peaks matter for energy: an amplifier backed off by the PAPR so that its peaks just reach saturation
+averages about (&pi;/4)&middot;10<sup>&minus;PAPR/20</sup> efficiency if it is an ideal class B stage, and
+0.5&middot;10<sup>&minus;PAPR/10</sup> for class A. Real amplifiers do worse, but the scaling holds: every decibel
+of PAPR removed lets the same battery radiate the same power for longer. I use the class B rule as a simple,
+comparable figure of merit throughout.</p>
+</div>
+</div>
+</section>
+
+<section id="rcf">
+<div class="wrap">
+<h2 data-index="04">Repeated Clipping and Filtering</h2>
+<div class="prose">
+<p>Clipping is the simplest way to remove peaks: every sample above a threshold is scaled down to it with its
+phase kept. I set the threshold through the clipping ratio CR, the clipping power over the mean power of the
+symbol, so the amplitude limit is &radic;(CR&middot;E|x|<sup>2</sup>). Clipping alone throws energy outside the
+band, so repeated clipping and filtering (RCF) follows every clip with a frequency domain filter: FFT, zero the
+out-of-band bins, inverse FFT. The filter lets a few peaks grow back, so the clip and filter pair is repeated,
+four times here. Armstrong introduced the idea for radio OFDM [1]; my thesis applied it to underwater acoustic
+OFDM and mapped its tradeoffs.</p>
+</div>
+<div class="chip-row"><span class="chip">128 subcarriers, QPSK</span><span class="chip">Oversampling I = 2</span><span class="chip">CR = 3 (4.77 dB)</span><span class="chip">1 to 4 passes</span><span class="chip">{{rcf_symbols}} symbols</span></div>
+<figure class="fig reveal" id="fig3"><img src="{{fig}}rcf_ccdf.png" alt="PAPR CCDF after one to four RCF passes" loading="lazy"><figcaption><b>Figure 3.</b> PAPR after one to four clip and filter passes, with a single clip without the filter for comparison.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>The PAPR at CCDF 10<sup>-3</sup> falls from {{rcf_original}} dB to {{rcf_p1}}, {{rcf_p2}}, {{rcf_p3}} and
+{{rcf_p4}} dB after one to four passes. Four passes remove {{rcf_gain}} dB of PAPR and lift the ideal class B
+efficiency from {{eff_orig}}% to {{eff_rcf}}%, a factor of {{eff_ratio_rcf}}.</div>
+<figure class="fig reveal" id="fig4"><img src="{{fig}}rcf_spectrum.png" alt="Spectrum after clipping only and after RCF" loading="lazy"><figcaption><b>Figure 4.</b> One clip without the filter reaches {{rcf_clip_only}} dB PAPR but pushes power out of the band; RCF keeps the spectrum clean.</figcaption></figure>
+<div class="prose">
+<p>The cost of RCF is in-band distortion: the clipped energy that stays inside the band adds a noise like error to
+every subcarrier, {{rcf_sdr}} dB below the signal for this setting. I measure the price as the extra SNR a QPSK
+link needs to reach a bit error rate of 10<sup>-4</sup> in white noise; without clipping that SNR is {{ref_snr}} dB.
+Because the added error is fixed once the data are known, the bit error rate is computed exactly from each bit's
+noiseless decision margin rather than by counting errors, which removes Monte Carlo noise from the table.</p>
+</div>
+<h3 class="subhead">Table 1: RCF parameter study, four passes, {{sweep_symbols}} symbols per row</h3>
+{{table_sweep}}
+<figure class="fig reveal" id="fig5"><img src="{{fig}}rcf_tradeoff.png" alt="PAPR and SNR cost against clipping ratio" loading="lazy"><figcaption><b>Figure 5.</b> The RCF tradeoff for oversampling I = 1 to 4: PAPR after four passes and the SNR a QPSK link needs for a bit error rate of 10<sup>-4</sup>.</figcaption></figure>
+<div class="callout model"><span class="k">Reading the tradeoff</span>With I = 2, CR = 3 cuts the PAPR to {{i2cr3_papr}} dB for {{i2cr3_pen}} dB more SNR, and CR = 2
+reaches {{i2cr2_papr}} dB for {{i2cr2_pen}} dB. Below CR = 2 the distortion grows faster than the peaks shrink,
+and at CR = 1.5 with filtering the bit error rate never reaches 10<sup>-4</sup>: the clipping itself sets an error
+floor. Without the filter (I = 1) the same CR reaches 10<sup>-4</sup> at {{i1cr15_snr}} dB, at the cost of
+out-of-band power.</div>
+</div>
+</section>
+
+<section id="companding">
+<div class="wrap">
+<h2 data-index="05">Rooting Companding</h2>
+<div class="prose">
+<p>Companding compresses large amplitudes instead of cutting them. My rooting companding transform raises each
+sample's amplitude to a power R below one and keeps its phase, f(x) = |x|<sup>R</sup>&middot;x/|x|, where R = 0.5 is
+square root companding and I explored R from 0.1 to 0.9. The receiver restores the amplitudes with
+|y|<sup>1/R</sup> before its FFT. Because the peak amplitude is raised to the same power, the PAPR in dB shrinks
+roughly in proportion to R.</p>
+</div>
+<figure class="fig reveal" id="fig6"><img src="{{fig}}rct.png" alt="Rooting companding CCDF and bit error rate" loading="lazy"><figcaption><b>Figure 6.</b> Rooting companding for R = 0.3 to 0.9 (left) and the bit error rate when the receiver expands the samples (right).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>In the thesis setting (Nyquist rate, cyclic prefix included) R = 0.5 takes the PAPR from
+{{rct_thesis_orig}} dB to {{rct_thesis_comp}} dB. With fourfold oversampling the original {{rct_L4_orig}} dB becomes {{rct_R09}},
+{{rct_R07}}, {{rct_R05}} and {{rct_R03}} dB for R = 0.9, 0.7, 0.5 and 0.3. For a bit error rate of 10<sup>-4</sup>, R = 0.5
+needs {{rct_snr_05}} dB of SNR, {{rct_pen_05}} dB more than no companding, because expanding the samples also
+stretches the noise.</div>
+<div class="callout note"><span class="k">Spectrum</span>Companding is a nonlinear operation, so it also spreads power outside
+the band. With fourfold oversampling, R = 0.5 sends {{rct_oob_pct}}% of the transmitted power outside the band
+({{rct_oob}} dB), against {{clip_oob_pct}}% for a single clip, and its in-band distortion sits {{rct_sdr}} dB below the signal. A practical RCT transmitter
+therefore adds a band limiting filter, the same compromise RCF makes explicitly.</div>
+</div>
+</section>
+
+<section id="slm-pts">
+<div class="wrap">
+<h2 data-index="06">Selected Mapping and Partial Transmit Sequences</h2>
+<div class="prose">
+<p>Distortion based methods change the signal; SLM and PTS only choose among equivalent versions of it. SLM
+multiplies the data by U different phase sequences drawn from {&plusmn;1, &plusmn;j}, computes U inverse FFTs and
+transmits the candidate with the lowest PAPR, sending log<sub>2</sub>U bits of side information so the receiver can
+undo the rotation [12]. PTS splits the subcarriers into V adjacent blocks, computes one inverse FFT per block, and
+searches the W<sup>V&minus;1</sup> combinations of block phase factors for the lowest peak, costing
+(V&minus;1)&middot;log<sub>2</sub>W side information bits [13, 14]. Neither adds distortion; both spend computation
+and a little rate.</p>
+</div>
+<figure class="fig reveal" id="fig7"><img src="{{fig}}slm_pts.png" alt="SLM and PTS CCDF curves" loading="lazy"><figcaption><b>Figure 7.</b> SLM against the closed form (left) and PTS for four block and phase settings (right), 256 subcarriers, {{slmpts_symbols}} symbols.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>SLM with U = 16 lowers the PAPR from {{slm_u1}} dB to {{slm_u16}} dB ({{slm_gain16}} dB) for 4
+side bits, and at the Nyquist rate the simulation matches the closed form (1 &minus; (1 &minus; e<sup>&minus;z</sup>)<sup>N</sup>)<sup>U</sup>
+to within {{slm_theory_dev}} dB for every U. PTS reaches {{pts_v4}} dB with 4 blocks and {{pts_v8}} dB with 8 blocks and two
+phase factors, and {{pts_v4w4}} dB with 4 blocks and four phase factors.</div>
+<h3 class="subhead">Table 2: every method on one footing, 128 subcarriers, fourfold oversampling, QPSK</h3>
+{{table_compare}}
+<figure class="fig reveal" id="fig8"><img src="{{fig}}method_comparison.png" alt="PAPR reached by every method" loading="lazy"><figcaption><b>Figure 8.</b> The PAPR each method reaches, with the ideal class B amplifier efficiency it allows.</figcaption></figure>
+<div class="prose">
+<p>The table is the design space in one view. Clipping and RCF remove the most PAPR for the least computation
+but add distortion; rooting companding is cheap but spreads the spectrum; SLM and PTS are clean but need side
+information and several inverse FFTs per symbol. A battery powered modem that can afford a little distortion gets
+the most from RCF, and that distortion is exactly what the receiver side of my thesis removes.</p>
+</div>
+</div>
+</section>
+
+<section id="receiver">
+<div class="wrap">
+<h2 data-index="07">Receiver: Learning the Amplifier and Removing Its Distortion</h2>
+<div class="prose">
+<p>Transmitter methods reduce the peaks, but a real amplifier still compresses whatever peaks remain, and the
+cheaper and more efficient the amplifier, the harder it compresses. My idea was to leave the amplifier alone and
+clean up its distortion at the receiver, where computation is less constrained than in a battery powered
+transmitter.</p>
+</div>
+<h3 class="subhead">The amplifier</h3>
+<div class="prose">
+<p>I model the transmit amplifier as a solid state power amplifier (Rapp model, smoothness p = 2), which
+compresses amplitude and leaves phase alone. Its drive is set by the input back-off, how far the saturation level
+sits above the RMS input amplitude, and I evaluate 3, 5 and 7 dB. By Bussgang's theorem the output is a scaled copy
+of the input plus a distortion term uncorrelated with it, y = &alpha;x + d, and that distortion d is what the
+receiver has to remove.</p>
+</div>
+<h3 class="subhead">The network</h3>
+<div class="prose">
+<p>The receiver does not know the amplifier's equations, so it learns them. The time signal's amplitudes are
+reshaped into vectors of six consecutive samples, one hidden layer of 12 sigmoid neurons maps them to six output
+amplitudes (162 weights in total), and the network is trained with the Levenberg-Marquardt algorithm [9] on 25,800
+amplifier samples measured at 35 dB SNR, split randomly 70/15/15 with validation based early stopping.</p>
+</div>
+<figure class="fig reveal" id="fig9"><img src="{{fig}}amplifier_network.png" alt="Amplifier curves, learned curves and the training history" loading="lazy"><figcaption><b>Figure 9.</b> The amplifier at three back-off levels and what the network learned (left); training history at 5 dB back-off (right).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>At 5 dB back-off training stops at epoch {{net5_epochs}} after {{net5_sec}} s with a validation MSE of
+{{net5_val}} and a test MSE of {{net5_test}}. Up to three times the RMS amplitude the learned curve stays within
+{{net_err_max}} of the true one at every back-off, and the Bussgang gain it implies, {{net5_alpha}}, matches the exact
+{{net5_alpha_exact}}. Each output depends on its own input: nudging a neighbouring input moves it by at most
+{{net_cross_max}}% as much, so the network has correctly learned that the amplifier has no memory.</div>
+<h3 class="subhead">The channel</h3>
+<div class="prose">
+<p>The channel is a BELLHOP ray tracing model of the chapter 4 link: 100 m of water, the transmitter at 30 m and
+the hydrophone at 50 m, 2 km apart, at 11 kHz, with the sound speed rising from 1482 m/s at the surface to 1498.4 m/s
+at 50 m over a sandy bottom. The arrivals are read with the parser I validated in my BELLHOP report.</p>
+</div>
+<figure class="fig reveal" id="fig10"><img src="{{fig}}bellhop_channel.png" alt="Sound speed profile, BELLHOP arrivals and frequency response" loading="lazy"><figcaption><b>Figure 10.</b> Sound speed profile and geometry, the {{ch_n}} BELLHOP arrivals at 2 km, and the resulting frequency response across the band.</figcaption></figure>
+<div class="callout result"><span class="k">Physical check</span>The first arrival reaches the hydrophone after {{ch_first}} s; the straight line distance at the
+harmonic mean sound speed predicts {{ch_straight}} s, a difference of {{ch_err}}%. Across the band the response swings
+from {{ch_fade_min}} dB to about +7 dB, with {{ch_fade_10}}% of the subcarriers faded by more than 10 dB.</div>
+<div class="callout note"><span class="k">Guard interval</span>The channel's rms delay spread is {{ch_rms}} ms, its last arrival comes {{ch_max}} ms after
+the first, and {{ch_in100}}% of its energy lands within 100 ms. The link model gives each subcarrier the channel's
+frequency response (thesis equation 4-18), which holds when the guard interval covers the multipath; the Channel
+view of the lab shows how the energy outside the guard falls as the guard grows, and what that costs in airtime.</div>
+<h3 class="subhead">Frequentative decision feedback</h3>
+<div class="prose">
+<p>The received subcarriers are Y<sub>k</sub> = H<sub>k</sub>(&alpha;X<sub>k</sub> + D<sub>k</sub>) + W<sub>k</sub>,
+where D<sub>k</sub> is the FFT of the amplifier distortion. D depends on the whole transmitted symbol, so the
+receiver cannot compute it until it knows the symbol, and it cannot know the symbol reliably until D is removed.
+FFB breaks the circle by iterating, the approach Tellado, Hoo and Cioffi [7] and Chen and Haimovich [8] took for
+known clipping; my contribution was to let a learned model stand in for the amplifier, so the receiver never needs
+the amplifier's equations:</p>
+</div>
+<ol class="steps">
+<li>Equalise with the known channel: Z<sub>k</sub> = Y<sub>k</sub> / H<sub>k</sub>, and start with D = 0.</li>
+<li>Decide: X&#770;<sub>k</sub> is the nearest QAM point to (Z<sub>k</sub> &minus; D<sub>k</sub>) / &alpha;.</li>
+<li>Reconstruct the transmitted signal from the decisions: x&#770; = IFFT(X&#770;), oversampled four times.</li>
+<li>Run it through the learned amplifier: y&#770; = network(|x&#770;|), with the phase of x&#770;.</li>
+<li>Estimate the distortion, D = FFT(y&#770; &minus; &alpha;x&#770;) on the in-band bins, and return to step 2.</li>
+</ol>
+<figure class="fig reveal" id="fig11"><img src="{{fig}}ffb_ber.png" alt="Bit error rate with and without FFB in white noise and over BELLHOP" loading="lazy"><figcaption><b>Figure 11.</b> 64-QAM at 5 dB back-off: without distortion removal, with FFB using the learned network (one and three passes) and the exact amplifier, and a perfectly linear amplifier for reference. {{rx_symbols}} symbols ({{rx_bits}} bits) per point.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>In white noise the amplifier alone leaves an error floor of {{awgn5_none40}} at 40 dB SNR; one FFB pass
+with the learned network removes it, and after three passes the link needs {{awgn5_snr_ffb}} dB for a bit error rate of
+10<sup>-3</sup>, against {{awgn5_snr_lin}} dB for a perfectly linear amplifier. Over the BELLHOP channel the floor of
+{{bh5_none40}} at 40 dB falls to {{bh5_ffb40}} with the learned network and {{bh5_exact40}} with the exact equations; the
+linear amplifier gives {{bh_lin40}}. The learned network performs as well as knowing the amplifier exactly.</div>
+<figure class="fig reveal" id="fig12"><img src="{{fig}}ffb_backoff.png" alt="Bit error rate at 3, 5 and 7 dB back-off with and without FFB" loading="lazy"><figcaption><b>Figure 12.</b> 64-QAM over the BELLHOP channel at three amplifier back-off levels, with and without FFB.</figcaption></figure>
+<div class="callout model"><span class="k">What FFB buys the battery</span>At 3 dB back-off the amplifier alone leaves {{bh3_none40}} of the bits wrong at
+40 dB SNR; FFB brings that to {{bh3_ffb40}}, {{bh3_ratio}} times fewer errors and level with a linear amplifier
+({{bh_lin40}}). Of the 3, 5 and 7 dB back-off levels, only 7 dB lets this link reach a bit error rate of 10<sup>-3</sup>
+without FFB ({{bh7_snr_none}} dB SNR); with FFB it gets there at 3 dB back-off ({{bh3_snr_ffb}} dB, against {{bh_snr_lin}} dB
+for a linear amplifier). An ideal class B amplifier averages {{eff3}}% efficiency at 3 dB back-off and {{eff7}}% at 7 dB,
+so for the same radiated power it draws {{eff_ratio_ffb}} times less from the battery. A clipper ahead of the
+amplifier behaves the same way: {{clip_none40}} without FFB and {{clip_ffb40}} with it at 40 dB.</div>
+<figure class="fig reveal" id="fig13"><img src="{{fig}}constellation.png" alt="64-QAM constellation before and after FFB" loading="lazy"><figcaption><b>Figure 13.</b> 64-QAM at 5 dB back-off and 35 dB SNR, before and after three FFB passes.</figcaption></figure>
+<div class="prose">
+<p>Over the BELLHOP channel FFB recovers linear amplifier performance and no more: what remains is set by the
+subcarriers sitting in deep fades, which only channel coding or diversity can fix. That is the natural limit of
+receiver side distortion removal, and it is why the white noise and channel results are shown side by side.</p>
+</div>
+</div>
+</section>
+
+<section id="applications">
+<div class="wrap">
+<h2 data-index="08">Applications</h2>
+<div class="concept-grid three">
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Ocean observation</span>
+<h3>Long-term Sensor Networks</h3>
+<p>Moored and seabed networks that report temperature, currents, acoustics or water quality for months. Energy per bit sets how long a deployment lasts, and lower PAPR plus receiver side cleanup lets the same battery carry more data.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#00e68a;">
+<span class="concept-tag">Autonomy</span>
+<h3>Vehicles and Gliders</h3>
+<p>AUV and glider telemetry and command links, where every watt spent on the acoustic modem is a watt not spent on propulsion or sensing.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent);">
+<span class="concept-tag">Offshore</span>
+<h3>Energy and Infrastructure</h3>
+<p>Wireless monitoring of subsea oil and gas equipment, pipelines and offshore wind foundations, where cables are expensive and divers are dangerous.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#a78bfa;">
+<span class="concept-tag">Safety</span>
+<h3>Early Warning and Security</h3>
+<p>Tsunami and seabed pressure buoys, harbour and coastal surveillance, and naval sensor networks that must run unattended.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#e879f9;">
+<span class="concept-tag">Radio</span>
+<h3>4G, 5G, Wi-Fi and Satellite</h3>
+<p>The same peak problem shapes 4G and 5G (it is why the LTE uplink uses single carrier FDMA), Wi-Fi, digital television and satellite links; clipping and filtering and neural network amplifier models are standard tools there.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Next steps</span>
+<h3>Where the Work Went</h3>
+<p>A long short-term memory network for PAPR reduction in underwater OFDM (JASA 2021 [16], KSII Transactions 2023 [17]), and co-authored deep learning OFDM receivers [18, 19].</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="code">
+<div class="wrap">
+<h2 data-index="09">Code and Reproducibility</h2>
+<div class="prose">
+<p>This work is open source at <a href="{{repo_url}}" target="_blank" rel="noopener">github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction</a>:
+a numpy package for the OFDM model, the PAPR methods, the amplifier, the BELLHOP channel, the neural network and the
+FFB receiver, together with the experiment and figure scripts, the browser lab and the tests.</p>
+</div>
+<div class="chip-row">
+<span class="chip">paprlab/ofdm.py</span><span class="chip">paprlab/transmitter.py</span><span class="chip">paprlab/amplifier.py</span>
+<span class="chip">paprlab/channel.py</span><span class="chip">paprlab/neural.py</span><span class="chip">paprlab/receiver.py</span><span class="chip">lab/papr-lab.js</span>
+</div>
+<div class="callout result"><span class="k">How the numbers are protected</span>22 unit tests pin the claims on this page, including exact inverses, SLM
+against its closed form, PTS against brute force, the BELLHOP geometry check, and FFB removing every noiseless
+distortion error. The lab's JavaScript engine recomputes nine reference cases exported by Python on every page load,
+and every number on this page is filled in from the experiment output by the build script, which refuses to build
+if one is missing.</div>
+<pre class="cmd">pip install -r requirements.txt
+python experiments/run_all.py        # every experiment, about {{runtime}} minutes
+python experiments/make_figures.py   # the figures
+python build.py                      # this page
+python -m unittest discover -s tests</pre>
+<a class="btn solid" href="{{repo_url}}" target="_blank" rel="noopener">Browse the repository</a>{{doi_button}}
+</div>
+</section>
+
+<section id="lessons">
+<div class="wrap">
+<h2 data-index="10">Lessons Learned</h2>
+<div class="prose">
+<p><strong>State the measurement with the number.</strong> A PAPR means little without its CCDF level and sampling
+rate, and an SNR means little without saying where it was measured; every number on this page carries both.</p>
+<p><strong>Distortion moves; it does not vanish.</strong> Clipping trades peaks for in-band error and spectrum, RCF
+trades the spectrum back for computation, rooting companding trades peaks for noise enhancement, and SLM and PTS
+trade them for side information. The useful question is always which resource the system can spare.</p>
+<p><strong>A receiver can clean up the amplifier, not the ocean.</strong> FFB with a 162 weight network matches a
+linear amplifier, which means the transmitter can run its amplifier much harder; beyond that point the fading
+channel sets the error rate, and the next gains come from coding and diversity.</p>
+<p><strong>Size the waveform from the channel.</strong> The BELLHOP channel spreads its energy over tens of
+milliseconds, which sets the guard interval and the symbol length, the same lesson my lake trial report drew from its
+measured coherence time.</p>
+</div>
+</div>
+</section>
+
+<section id="references">
+<div class="wrap">
+<h2 data-index="11">Nomenclature and References</h2>
+<div class="nomen">
+<div><b>AWGN</b>additive white Gaussian noise</div><div><b>BER</b>bit error rate</div>
+<div><b>CCDF</b>complementary cumulative distribution function</div><div><b>CR</b>clipping ratio (clipping over mean power)</div>
+<div><b>FFB</b>frequentative decision feedback</div><div><b>I</b>oversampling factor</div>
+<div><b>OFDM</b>orthogonal frequency division multiplexing</div><div><b>PAPR</b>peak-to-average power ratio</div>
+<div><b>PTS</b>partial transmit sequences</div><div><b>QAM</b>quadrature amplitude modulation</div>
+<div><b>RCF</b>repeated clipping and filtering</div><div><b>RCT</b>rooting companding transform</div>
+<div><b>SDR</b>signal to distortion ratio</div><div><b>SLM</b>selected mapping</div>
+<div><b>SNR</b>signal to noise ratio</div><div><b>SSPA</b>solid state power amplifier</div>
+</div>
+<h3 class="subhead">References</h3>
+<ul class="pub-list refs">
+<li>[1] J. Armstrong, "Peak-to-average power reduction for OFDM by repeated clipping and frequency domain filtering," <i>Electronics Letters</i>, vol. 38, no. 5, pp. 246-247, 2002.</li>
+<li>[2] R. W. B&auml;uml, R. F. H. Fischer and J. B. Huber, "Reducing the peak-to-average power ratio of multicarrier modulation by selected mapping," <i>Electronics Letters</i>, vol. 32, no. 22, pp. 2056-2057, 1996.</li>
+<li>[3] S. H. M&uuml;ller and J. B. Huber, "OFDM with reduced peak-to-average power ratio by optimum combination of partial transmit sequences," <i>Electronics Letters</i>, vol. 33, no. 5, pp. 368-369, 1997.</li>
+<li>[4] X. Wang, T. T. Tjhung and C. S. Ng, "Reduction of peak-to-average power ratio of OFDM system using a companding technique," <i>IEEE Transactions on Broadcasting</i>, vol. 45, no. 3, pp. 303-307, 1999.</li>
+<li>[5] R. van Nee and A. de Wild, "Reducing the peak-to-average power ratio of OFDM," <i>Proc. IEEE Vehicular Technology Conference</i>, 1998, pp. 2072-2076.</li>
+<li>[6] C. Rapp, "Effects of HPA-nonlinearity on a 4-DPSK/OFDM-signal for a digital sound broadcasting system," <i>Proc. Second European Conference on Satellite Communications</i>, 1991, pp. 179-184.</li>
+<li>[7] J. Tellado, L. M. C. Hoo and J. M. Cioffi, "Maximum-likelihood detection of nonlinearly distorted multicarrier symbols by iterative decoding," <i>IEEE Transactions on Communications</i>, vol. 51, no. 2, pp. 218-228, 2003.</li>
+<li>[8] H. Chen and A. M. Haimovich, "Iterative estimation and cancellation of clipping noise for OFDM signals," <i>IEEE Communications Letters</i>, vol. 7, no. 7, pp. 305-307, 2003.</li>
+<li>[9] M. T. Hagan and M. B. Menhaj, "Training feedforward networks with the Marquardt algorithm," <i>IEEE Transactions on Neural Networks</i>, vol. 5, no. 6, pp. 989-993, 1994.</li>
+<li>[10] M. B. Porter, <i>The BELLHOP Manual and User's Guide</i>, Heat, Light, and Sound Research, 2011.</li>
+<li>[11] X. Ma, W. Raza, Z. Wu, M. Bilal, Z. Zhou and A. Ali, "A nonlinear distortion removal based on deep neural network for underwater acoustic OFDM communication with the mitigation of peak to average power ratio," <i>Applied Sciences</i>, vol. 10, no. 14, 4986, 2020.</li>
+<li>[12] W. Raza, X. Ma, A. Ali, A. Raza and S. Shaikh, "Performance analysis of selective mapping in underwater acoustic orthogonal frequency division multiplexing communication system," <i>Engineering, Technology &amp; Applied Science Research</i>, vol. 11, no. 1, pp. 6696-6702, 2021.</li>
+<li>[13] W. Raza, X. Ma, T. Wang and M. Bilal, "Low complexity energy efficient OFDM communication system over underwater acoustic channel by partial transmit sequence peak to average power ratio reduction," <i>J. Acoust. Soc. Am.</i>, vol. 146, no. 4, pp. 2764-2765, 2019.</li>
+<li>[14] W. Raza, X. Ma, A. Ali, Z. A. Shah and G. Mehdi, "An implementation of partial transmit sequences to design energy efficient underwater acoustic OFDM communication system," arXiv:2007.01273, 2020.</li>
+<li>[15] W. Raza, "PAPR reduction with nonlinear distortion removal using machine learning in underwater acoustic OFDM communication system," M.Eng. thesis, Harbin Engineering University, 2021.</li>
+<li>[16] W. Raza, X. Ma and M. Bilal, "Long short-term memory neural network assisted peak to average power ratio reduction for underwater acoustic OFDM communication," <i>J. Acoust. Soc. Am.</i>, vol. 150, p. A319, 2021.</li>
+<li>[17] W. Raza, X. Ma, H. Song, A. Ali, H. Zubairi and K. Acharya, "Long short-term memory neural network assisted peak to average power ratio reduction for underwater acoustic OFDM communication," <i>KSII Transactions on Internet and Information Systems</i>, vol. 17, 2023.</li>
+<li>[18] A. Ali, B. Chen, W. Raza, A. H. Samo and A. Ali, "Reduction of PAPR by convolutional neural network with soft feedback in an underwater acoustic OFDM communication," <i>Proc. 18th International Bhurban Conference on Applied Sciences and Technology</i>, 2021.</li>
+<li>[19] A. Ali, B. Chen, W. Raza, A. H. Samo and A. Ali, "Deep learning based OFDM system for underwater acoustic communication with mitigation of peak to average power ratio," <i>International Journal of Scientific &amp; Technology Research</i>, vol. 9, no. 12, pp. 117-122, 2020.</li>
+</ul>
+<div class="availability">
+<strong>Materials.</strong> The code, experiments, tests, figures, browser lab, and the BELLHOP input and arrivals output
+for this work are in the repository. BELLHOP itself is Michael B. Porter's Acoustics Toolbox and is cited, not
+redistributed. The thesis document is summarised here and not published.
+</div>
+</div>
+</section>

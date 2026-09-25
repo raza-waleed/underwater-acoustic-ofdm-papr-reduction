@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+{{head_extra}}<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAPR Reduction &amp; Neural Network Receiver | Waleed Raza</title>
+<meta name="description" content="Waleed Raza's M.Eng. thesis: PAPR reduction for underwater acoustic OFDM with repeated clipping and filtering, rooting companding, SLM and PTS, and a neural network receiver that removes power amplifier distortion by frequentative decision feedback over a BELLHOP channel, with an interactive lab.">
+{{head_links}}<style>
+{{base_css}}
+{{page_css}}
+{{lab_css}}
+</style>
+</head>
+<body>
+
+{{nav}}
+
+{{content}}
+
+{{footer}}
+
+<script type="application/json" id="paprlab-data">{{lab_data}}</script>
+<script>
+{{lab_js}}
+</script>
+<script>
+(function () {
+  var root = document.getElementById('papr-lab');
+  try {
+    var data = JSON.parse(document.getElementById('paprlab-data').textContent);
+    window.PaprLab.mount(root, data);
+  } catch (err) {
+    root.innerHTML = '<div class="plab-loading">The lab could not start (' + String(err && err.message || err) + '). The figures below show the same results.</div>';
+  }
+})();
+</script>
+{{scripts}}
+</body>
+</html>

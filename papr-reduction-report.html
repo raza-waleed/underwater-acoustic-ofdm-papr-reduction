@@ -1,0 +1,2139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAPR Reduction &amp; Neural Network Receiver | Waleed Raza</title>
+<meta name="description" content="Waleed Raza's M.Eng. thesis: PAPR reduction for underwater acoustic OFDM with repeated clipping and filtering, rooting companding, SLM and PTS, and a neural network receiver that removes power amplifier distortion by frequentative decision feedback over a BELLHOP channel, with an interactive lab.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #0a0e14;
+  --bg-panel: #101724;
+  --bg-panel-2: #0d131e;
+  --text: #e7edf5;
+  --muted: #8695a8;
+  --accent: #ffb020;
+  --accent-2: #39d2ff;
+  --line: #1c2634;
+  --line-bright: #2a3648;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --display: 'Space Grotesk', sans-serif;
+  --body: 'Inter', -apple-system, sans-serif;
+  --max: 920px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 240ms;
+
+  /* Depth */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  --shadow-md: 0 12px 32px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --shadow-lg: 0 24px 64px -20px rgba(0, 0, 0, 0.65);
+
+  /* 4px/8px spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+section[id], header[id] { scroll-margin-top: 96px; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--body);
+  line-height: 1.65;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: var(--display); font-weight: 600; color: var(--text); }
+h1 { line-height: 1.08; letter-spacing: -0.02em; }
+h2 { line-height: 1.2; letter-spacing: -0.01em; }
+h3 { line-height: 1.3; letter-spacing: -0.006em; }
+a { color: var(--accent-2); text-decoration: none; transition: color var(--dur) var(--ease), opacity var(--dur) var(--ease); }
+a:hover { text-decoration: underline; }
+
+/* Visible keyboard focus everywhere -- WCAG 2.4.7. There were no focus styles
+   at all before this, so keyboard/switch users had no way to see where they were. */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.scenario-tab:focus-visible,
+.nav-toggle:focus-visible,
+.project-card:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+:focus:not(:focus-visible) { outline: none; }
+
+.wrap { max-width: var(--max); margin: 0 auto; padding: 0 24px; }
+
+/* Nav */
+nav.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(10, 14, 20, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+nav.topnav .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1300px;
+  padding: 14px 24px;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+nav.topnav .wrap::-webkit-scrollbar { display: none; }
+nav.topnav .brand {
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+nav.topnav .brand::before { content: "// "; color: var(--muted); }
+nav.topnav ul {
+  list-style: none;
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  flex-wrap: nowrap;
+  position: relative;
+  flex-shrink: 0;
+}
+nav.topnav a {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 6px 7px;
+  border-radius: 3px;
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  transition: color var(--dur) var(--ease);
+  user-select: none;
+}
+nav.topnav a:visited { color: var(--muted); }
+nav.topnav a:hover, nav.topnav a.active { color: var(--text); text-decoration: none; }
+nav.topnav a.active, nav.topnav a.active:visited { color: var(--accent); }
+nav.topnav .brand { user-select: none; }
+#nav-indicator {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  border-radius: 2px;
+  width: 0;
+  left: 0;
+}
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 34px;
+  height: 34px;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-bright);
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: border-color var(--dur) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.nav-toggle:hover { border-color: var(--accent-2); }
+.nav-toggle:active { transform: scale(0.94); }
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  width: 16px;
+  background: var(--accent-2);
+  border-radius: 2px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.nav-toggle.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+@media (max-width: 1300px) {
+  nav.topnav .wrap {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+  .nav-toggle { display: flex; }
+  nav.topnav ul {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    flex-basis: 100%;
+    padding-top: 12px;
+    gap: 0;
+  }
+  nav.topnav ul.open { display: flex; }
+  nav.topnav a {
+    padding: 13px 8px;
+    border-bottom: 1px solid var(--line);
+    white-space: normal;
+    width: 100%;
+  }
+  nav.topnav li:last-child a { border-bottom: none; }
+  #nav-indicator { display: none; }
+}
+
+/* Hero */
+header.hero {
+  padding: 96px 0 56px;
+  border-bottom: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+header.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(57, 210, 255, 0.08), transparent 70%);
+  pointer-events: none;
+}
+header.hero .wrap { position: relative; z-index: 1; }
+
+.hero-map {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 460px;
+  height: auto;
+  z-index: 0;
+  opacity: 0.75;
+  pointer-events: none;
+}
+.hero-map .fl-shape {
+  fill: rgba(57, 210, 255, 0.12);
+  stroke: rgba(255, 176, 32, 0.45);
+  stroke-width: 1.8;
+  filter: drop-shadow(0 0 10px rgba(57, 210, 255, 0.25));
+}
+.hero-map .route {
+  fill: none;
+  stroke: var(--accent-2);
+  stroke-width: 1.7;
+  stroke-dasharray: 7 7;
+  opacity: 0.85;
+  filter: drop-shadow(0 0 3px rgba(57, 210, 255, 0.6));
+  animation: dash-flow 3.2s linear infinite;
+}
+.hero-map .route.amber { stroke: var(--accent); filter: drop-shadow(0 0 3px rgba(255, 176, 32, 0.6)); }
+.hero-map .city-dot { fill: var(--accent-2); opacity: 0.95; filter: drop-shadow(0 0 3px rgba(57, 210, 255, 0.7)); }
+.hero-map .hub-dot { fill: var(--accent); filter: drop-shadow(0 0 5px rgba(255, 176, 32, 0.8)); }
+.hero-map .pulse-ring {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.8;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: radar-pulse 2.6s ease-out infinite;
+}
+.hero-map .label {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--text);
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+.hero-map .label.kdab { fill: var(--accent); font-weight: 600; }
+
+@keyframes dash-flow { to { stroke-dashoffset: -28; } }
+@keyframes radar-pulse {
+  0% { transform: scale(0.4); opacity: 0.65; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* Only show once the viewport is comfortably wider than the 920px text
+   column, so the map sits in real free space instead of overlapping text. */
+@media (min-width: 1440px) {
+  .hero-map { display: block; }
+}
+@media (min-width: 1720px) {
+  .hero-map { opacity: 0.95; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-map .route, .hero-map .pulse-ring { animation: none; }
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eyebrow .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+header.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+header.hero .title-line { color: var(--text); font-size: 1.15rem; margin: 0 0 4px; font-weight: 500; }
+header.hero .affil { color: var(--muted); font-size: 0.95rem; margin: 0; font-family: var(--mono); }
+header.hero .summary { margin-top: 28px; max-width: 66ch; color: var(--muted); font-size: 1.02rem; }
+
+.badges { margin-top: var(--space-5); display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.badge {
+  border: 1px solid var(--line-bright);
+  background: var(--bg-panel);
+  border-radius: 4px;
+  padding: 7px 14px;
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  letter-spacing: 0.4px;
+  color: var(--accent-2);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.badge:hover { border-color: var(--accent-2); transform: translateY(-1px); }
+
+.btn {
+  display: inline-block;
+  border: 1px solid var(--line-bright);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 11px 20px;
+  font-size: 0.9rem;
+  font-family: var(--mono);
+  margin-top: 26px;
+  margin-right: 10px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.btn:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.btn:active { transform: translateY(0); }
+.btn.solid { background: var(--accent); color: #14100a; border-color: var(--accent); font-weight: 600; }
+.btn.solid:hover { box-shadow: 0 0 24px rgba(255, 176, 32, 0.4); }
+
+/* Sections */
+section { padding: 64px 0; border-bottom: 1px solid var(--line); }
+section:last-of-type { border-bottom: none; }
+section h2 {
+  font-size: clamp(1.3rem, 2.2vw, 1.6rem);
+  margin: 0 0 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+}
+section h2::before {
+  content: attr(data-index);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--accent);
+}
+section h2::after { content: ""; flex: 1; height: 1px; background: var(--line-bright); }
+
+.entry { margin-bottom: 26px; padding-left: 18px; border-left: 2px solid var(--line); }
+.entry:last-child { margin-bottom: 0; }
+.entry-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; }
+.entry-title { font-weight: 600; font-size: 1.02rem; color: var(--text); }
+.entry-org { color: var(--muted); font-size: 0.92rem; }
+.entry-date { color: var(--accent-2); font-size: 0.8rem; font-family: var(--mono); white-space: nowrap; }
+.entry ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
+.entry ul li { margin-bottom: 5px; font-size: 0.95rem; }
+
+.pub-list { list-style: none; margin: 0; padding: 0; }
+.pub-list li {
+  padding: 16px 0 16px 18px;
+  border-left: 2px solid var(--line);
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.95rem;
+  color: var(--muted);
+  transition: border-left-color var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.pub-list li:hover { border-left-color: var(--accent); background-color: rgba(255, 255, 255, 0.015); }
+.pub-list li:last-child { border-bottom: none; }
+.pub-list strong { color: var(--text); }
+.pub-venue { color: var(--accent-2); font-style: normal; font-family: var(--mono); font-size: 0.85rem; }
+.pub-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 3px;
+  padding: 1px 7px;
+  margin-right: 8px;
+  color: var(--accent);
+  vertical-align: middle;
+}
+.pub-award { display: inline-block; margin-top: 6px; font-size: 0.8rem; font-family: var(--mono); color: var(--accent); }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+@media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.project-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+@media (max-width: 980px) { .project-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) { .project-grid { grid-template-columns: 1fr; } }
+.project-card {
+  display: block;
+  background: var(--bg-panel);
+  border: 1px solid var(--line-bright);
+  border-radius: 8px;
+  padding: 22px;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.project-card:hover { border-color: var(--accent-2); transform: translateY(-4px); box-shadow: var(--shadow-md); text-decoration: none; }
+.project-card:active { transform: translateY(-1px); }
+.project-tag {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--accent); display: block; margin-bottom: 10px;
+}
+.project-title { font-family: var(--display); font-weight: 600; font-size: 1.05rem; margin-bottom: 10px; color: var(--text); }
+.project-desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 16px; }
+.project-link { font-family: var(--mono); font-size: 0.8rem; color: var(--accent-2); }
+
+.skill-group { margin-bottom: 18px; }
+.skill-group .label {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--accent-2);
+  margin-bottom: 8px;
+}
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--bg-panel);
+  border: 1px solid var(--line-bright);
+  border-radius: 4px;
+  padding: 5px 11px;
+  font-size: 0.82rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.chip:hover { border-color: var(--line-bright); color: var(--text); }
+
+.service-list { margin: 0; padding-left: 18px; color: var(--muted); }
+.service-list li { margin-bottom: 10px; font-size: 0.95rem; }
+.service-list strong { color: var(--text); }
+
+.contact-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.contact-links a {
+  border: 1px solid var(--line-bright);
+  border-radius: 5px;
+  padding: 9px 16px;
+  font-size: 0.88rem;
+  font-family: var(--mono);
+  color: var(--text);
+  display: inline-block;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.contact-links a:hover { border-color: var(--accent-2); color: var(--accent-2); text-decoration: none; transform: translateY(-2px); }
+
+footer { padding: 36px 0 56px; color: var(--muted); font-size: 0.8rem; font-family: var(--mono); text-align: center; }
+#contact { padding-bottom: max(70vh, 500px); }
+
+/* Reveal animation targets (GSAP controls opacity/transform via JS; CSS just sets initial state) */
+.reveal { opacity: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+}
+
+.reveal { opacity: 1; }
+nav.topnav .wrap { flex-wrap: nowrap; }
+nav.topnav ul.mini { display: flex; flex-direction: row; width: auto; flex-basis: auto; padding: 0; gap: 2px; }
+nav.topnav ul.mini a { border: none; padding: 6px 7px; width: auto; }
+
+/* Page styles for the PAPR thesis page, layered on the waleedraza.dev design
+   system (report/site-style.css is a copy of the site's style.css). The hero,
+   concept cards and stat cards follow the site's Power Grid page. */
+.sim-hero { padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
+.sim-hero .eyebrow { margin-bottom: 14px; }
+.sim-hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.7rem); margin: 0 0 16px; letter-spacing: -0.5px; max-width: 24ch; }
+.sim-hero .summary { max-width: 74ch; color: var(--muted); font-size: 1.02rem; }
+.stack-row { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 24px;
+}
+.back-link:hover { color: var(--accent-2); text-decoration: none; }
+.section-lead { color: var(--muted); max-width: 75ch; margin-top: -16px; margin-bottom: 28px; }
+.wrap.wide { max-width: 1180px; }
+
+.prose { color: #c9d3df; }
+.prose p { margin: 0 0 16px; }
+.prose strong { color: var(--text); font-weight: 600; }
+h3.subhead {
+  font-family: var(--mono); font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent-2); font-weight: 500; margin: 36px 0 14px;
+}
+code {
+  font-family: var(--mono); font-size: 0.86em; color: var(--text);
+  background: var(--bg-panel-2); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px;
+}
+sup, sub { line-height: 0; }
+
+/* Concept cards (as on the Power Grid page) */
+.concept-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin: 8px 0 8px; }
+.concept-grid.three { grid-template-columns: repeat(3, 1fr); }
+.concept-grid.two { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 980px) { .concept-grid, .concept-grid.three { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .concept-grid, .concept-grid.three, .concept-grid.two { grid-template-columns: 1fr; } }
+.concept-card {
+  background: var(--bg-panel); border: 1px solid var(--line-bright); border-radius: 8px;
+  padding: 20px 18px; position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.concept-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.concept-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--card-color, var(--accent-2)); box-shadow: 0 0 12px var(--card-color, var(--accent-2));
+}
+.concept-tag {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--card-color, var(--accent-2)); display: block; margin-bottom: 10px;
+}
+.concept-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.concept-card p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.concept-card .result { font-family: var(--mono); font-size: 0.72rem; color: var(--text); margin-top: 14px; display: block; line-height: 1.5; }
+.concept-card .result::before { content: "Result: "; color: var(--muted); }
+
+/* Stat cards (as on the Power Grid page) */
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 8px; }
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-radius: 6px;
+  padding: 16px 14px; box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease);
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card .num { font-family: var(--display); font-size: 1.7rem; color: var(--accent-2); font-weight: 700; line-height: 1.2; }
+.stat-card .num.amber { color: var(--accent); }
+.stat-card .lbl { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; line-height: 1.45; }
+
+/* Figures */
+figure.fig {
+  margin: 24px 0; background: var(--bg-panel); border: 1px solid var(--line-bright); border-radius: 8px;
+  padding: 12px; box-shadow: var(--shadow-sm);
+}
+figure.fig img, figure.fig svg { width: 100%; height: auto; display: block; border-radius: 4px; }
+figure.fig figcaption { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); margin: 10px 4px 2px; line-height: 1.6; }
+figure.fig figcaption b { color: var(--accent-2); font-weight: 500; }
+
+/* Callouts */
+.callout {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-left: 3px solid var(--callout, var(--accent-2));
+  border-radius: 6px; padding: 14px 18px; margin: 18px 0; font-size: 0.95rem; color: #c9d3df; box-shadow: var(--shadow-sm);
+}
+.callout .k {
+  display: block; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--callout, var(--accent-2)); margin-bottom: 6px; font-weight: 500;
+}
+.callout.result { --callout: #00e68a; }
+.callout.model { --callout: var(--accent); }
+.callout.note { --callout: #a78bfa; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+
+.equation {
+  font-family: var(--mono); font-size: 0.9rem; color: var(--text); background: var(--bg-panel-2);
+  border: 1px solid var(--line-bright); border-radius: 6px; padding: 12px 16px; margin: 16px 0; text-align: center; overflow-x: auto;
+}
+
+/* Algorithm steps (the Power Grid page's numbered drill list) */
+ol.steps { list-style: none; margin: 8px 0 24px; padding: 0; counter-reset: step; }
+ol.steps li {
+  counter-increment: step; position: relative;
+  padding: 12px 0 12px 52px; border-top: 1px solid var(--line); color: #c9d3df; font-size: 0.95rem;
+}
+ol.steps li:last-child { border-bottom: 1px solid var(--line); }
+ol.steps li::before {
+  content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 12px;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--accent);
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line-bright); border-radius: 8px;
+  background: var(--bg-panel); box-shadow: var(--shadow-sm);
+}
+table.data { border-collapse: collapse; width: 100%; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+table.data th {
+  text-align: left; font-family: var(--mono); font-size: 0.68rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--muted); background: var(--bg-panel-2); padding: 10px 12px; border-bottom: 1px solid var(--line-bright);
+}
+table.data td { padding: 8px 12px; border-top: 1px solid var(--line); color: #c9d3df; vertical-align: top; }
+table.data tbody tr:hover td { background: rgba(57, 210, 255, 0.035); }
+table.data td:first-child { color: var(--text); }
+
+/* Block diagram */
+svg.diagram { background: var(--bg-panel-2); }
+.dg-head { fill: var(--accent); font: 500 11px var(--mono); letter-spacing: 0.1em; }
+.dg-box rect { fill: #111b29; stroke: var(--line-bright); stroke-width: 1.2; }
+.dg-box text { fill: var(--text); font: 600 12px var(--body); text-anchor: middle; }
+.dg-box text.dg-small { fill: var(--muted); font: 400 10.5px var(--body); }
+.dg-box.hi-amber rect { stroke: var(--accent); }
+.dg-box.hi-cyan rect { stroke: var(--accent-2); }
+.dg-box.hi-green rect { stroke: #00e68a; }
+.dg-arrow line { stroke: var(--muted); stroke-width: 1.4; marker-end: url(#ah); }
+
+/* Code and references */
+pre.cmd {
+  font-family: var(--mono); font-size: 0.82rem; color: var(--text); background: var(--bg-panel-2);
+  border: 1px solid var(--line-bright); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 16px 0; line-height: 1.7;
+}
+.nomen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 20px; font-size: 0.86rem; color: var(--muted); margin-bottom: 8px; }
+.nomen b { font-family: var(--mono); color: var(--accent-2); font-weight: 500; margin-right: 8px; }
+.refs li { font-size: 0.86rem; }
+.refs i { color: var(--text); font-style: italic; }
+.availability {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-radius: 6px;
+  padding: 16px 20px; font-size: 0.88rem; color: var(--muted); margin-top: 18px;
+}
+.availability strong { color: var(--text); }
+
+.plab-loading {
+  border: 1px solid var(--line-bright); border-radius: 8px; background: var(--bg-panel);
+  padding: 48px 24px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .sim-hero { padding: 48px 0 32px; }
+  figure.fig { padding: 8px; margin: 18px 0; }
+  .callout { padding: 12px 14px; }
+}
+
+/* PAPR lab. Colours come from the host page's design tokens (waleedraza.dev
+   style.css), with fallbacks so the lab also stands alone. */
+.plab-root {
+  --plab-panel: var(--bg-panel-2, #0d131e);
+  --plab-line: var(--line-bright, #2a3648);
+  --plab-cyan: var(--accent-2, #39d2ff);
+  --plab-amber: var(--accent, #ffb020);
+}
+.plab-check { font-family: var(--mono); font-size: 0.8rem; margin: 0 0 14px; }
+.plab-check summary { cursor: pointer; color: #00e68a; }
+.plab-check.bad summary { color: #f87171; }
+.plab-check ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); list-style: none; }
+.plab-check li { margin: 2px 0; }
+.plab-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--plab-line); margin-bottom: 16px; overflow-x: auto; }
+.plab-tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: 600 0.9rem var(--display); padding: 10px 14px; cursor: pointer; white-space: nowrap; }
+.plab-tab:hover { color: var(--text); }
+.plab-tab.on { color: var(--plab-cyan); border-bottom-color: var(--plab-cyan); }
+.plab-tab:focus-visible, .plab-segbtn:focus-visible, .plab-btn:focus-visible { outline: 2px solid var(--plab-cyan); outline-offset: 2px; }
+.plab-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 18px; align-items: start; }
+.plab-controls { display: flex; flex-direction: column; gap: 12px; }
+.plab-field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.plab-label { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+.plab-label output { color: var(--text); text-transform: none; letter-spacing: 0; }
+.plab-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.plab-segbtn { flex: 1 1 auto; background: var(--plab-panel); border: 1px solid var(--plab-line); color: var(--text); border-radius: 4px; padding: 5px 8px; font: 500 0.78rem var(--mono); cursor: pointer; }
+.plab-segbtn:hover { border-color: var(--muted); }
+.plab-segbtn.on { border-color: var(--plab-cyan); color: var(--plab-cyan); background: rgba(57, 210, 255, 0.1); }
+.plab-segbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.plab-controls select { background: var(--plab-panel); color: var(--text); border: 1px solid var(--plab-line); border-radius: 4px; padding: 6px 8px; font: 0.82rem var(--mono); }
+.plab-controls input[type=range] { width: 100%; accent-color: var(--plab-cyan); }
+.plab-note { font-size: 0.78rem; color: var(--muted); margin: 0; line-height: 1.45; }
+.plab-btn { background: rgba(255, 176, 32, 0.1); border: 1px solid var(--plab-amber); color: var(--plab-amber); border-radius: 4px; padding: 7px 10px; font: 600 0.8rem var(--mono); cursor: pointer; }
+.plab-btn:hover { background: rgba(255, 176, 32, 0.18); }
+.plab-main { min-width: 0; }
+.plab-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.plab-stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.plab-stat { background: var(--plab-panel); border: 1px solid var(--plab-line); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.plab-k { font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+.plab-v { font: 600 1.02rem var(--display); color: var(--text); overflow-wrap: anywhere; }
+.plab-s { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
+.plab-canvas { display: block; width: 100%; border-radius: 4px; }
+.plab-progress { font: 0.7rem var(--mono); color: var(--muted); margin-top: 6px; }
+.plab-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.plab-noscript { color: var(--muted); font-size: 0.9rem; }
+@media (max-width: 520px) {
+  .plab-tab { padding: 8px 10px; font-size: 0.85rem; }
+  .plab-tab-sub { display: none; }
+}
+@media (max-width: 760px) {
+  .plab-layout { grid-template-columns: minmax(0, 1fr); }
+  .plab-stats, .plab-stats.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plab-pair { grid-template-columns: minmax(0, 1fr); }
+}
+
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+<div class="wrap">
+<div class="brand">Waleed Raza</div>
+<ul class="mini">
+<li><a href="https://waleedraza.dev">Portfolio</a></li>
+<li><a class="active" href="https://waleedraza.dev/underwater-acoustics">Acoustics</a></li>
+<li><a href="https://github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction">Code</a></li>
+</ul>
+</div>
+</nav>
+
+<header class="sim-hero" id="top">
+<div class="wrap">
+<a class="back-link" href="https://waleedraza.dev/underwater-acoustics">&larr; Underwater Acoustic Engineering</a>
+<p class="eyebrow"><span class="dot"></span> M.Eng. Thesis &middot; Harbin Engineering University &middot; 2018 to 2021</p>
+<h1>PAPR Reduction and Neural Network Distortion Removal for Underwater Acoustic OFDM</h1>
+<p class="summary">
+Battery powered underwater acoustic modems spend much of their energy in the transmit power amplifier, and
+OFDM makes that amplifier inefficient: its peaks sit about 11 dB above the average power, so the amplifier has
+to run far below saturation. My M.Eng. thesis attacked the problem from both ends of the link. At the
+transmitter I reduced the peak-to-average power ratio (PAPR) with repeated clipping and filtering and a rooting
+companding transform, alongside the selected mapping and partial transmit sequence methods from my published
+papers. At the receiver I trained a small neural network to learn the power amplifier and removed its
+distortion by <strong style="color:var(--text);">frequentative decision feedback (FFB)</strong>. Every result on
+this page comes from the open implementation of this work, and the lab runs the same engine live in your browser.
+</p>
+<div class="stack-row">
+<span class="badge">OFDM PAPR Reduction</span>
+<span class="badge">Clipping &amp; Filtering</span>
+<span class="badge">SLM &amp; PTS</span>
+<span class="badge">Neural Network Receiver</span>
+<span class="badge">BELLHOP Channel</span>
+<span class="badge">22 Unit Tests</span>
+</div>
+<a class="btn solid" href="#lab">Open the interactive lab</a>
+<a class="btn" href="https://github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction" target="_blank" rel="noopener">View the code on GitHub</a>
+</div>
+</header>
+
+<section id="approach">
+<div class="wrap">
+<h2 data-index="01">The Problem and My Approach</h2>
+<div class="prose">
+<p>Underwater sensor networks watch the ocean for months at a time on battery power: moored oceanographic
+sensors, seabed stations, autonomous vehicles and gliders, environmental monitors and subsea oil and gas
+equipment. Radio fades within metres in seawater, so these systems talk with sound, and the power amplifier
+that drives the transmitting transducer is one of the largest energy costs in the modem. Every decibel it
+wastes shortens how long a deployment can last.</p>
+<p>OFDM is the modulation of choice for high rate underwater links because it turns a long, frequency selective
+multipath channel into hundreds of narrow subcarriers that are each easy to equalise. Its weakness is the
+peak-to-average power ratio: the inverse FFT adds hundreds of subcarriers together, and now and then they line up
+into a peak far above the average. The amplifier must stay linear at those peaks, so it spends most of its time
+backed off, where it is inefficient. An ideal class B amplifier averages 78.5% efficiency at full drive but only
+about 22.3% when backed off by the 10.92 dB an OFDM signal needs.</p>
+<p>My goal was a low complexity, energy efficient OFDM system for battery powered underwater modems, and I
+worked on both ends of the link:</p>
+</div>
+<div class="concept-grid two">
+<div class="concept-card reveal" style="--card-color:var(--accent);">
+<span class="concept-tag">Transmitter &middot; Chapter 3</span>
+<h3>Repeated Clipping and Filtering</h3>
+<p>Clip every peak above a threshold, filter the regrowth out of the band, repeat. I studied how the clipping ratio, oversampling factor and pilot layout trade PAPR against bit error rate for underwater acoustic OFDM.</p>
+<span class="result">10.97 to 5.39 dB in four passes</span>
+</div>
+<div class="concept-card reveal" style="--card-color:#a78bfa;">
+<span class="concept-tag">Transmitter &middot; Chapter 3</span>
+<h3>Rooting Companding</h3>
+<p>A power law compander |x|<sup>R</sup> that keeps the phase, with exponents from 0.1 to 0.9 and the inverse applied at the receiver.</p>
+<span class="result">R = 0.5: 10.84 to 6.03 dB</span>
+</div>
+<div class="concept-card reveal" style="--card-color:#00e68a;">
+<span class="concept-tag">Transmitter &middot; Published</span>
+<h3>Selected Mapping and PTS</h3>
+<p>Distortionless methods from my published papers: transmit the best of several phase rotated copies of each symbol and send a few bits of side information.</p>
+<span class="result">SLM, 16 candidates: 11.15 to 8.03 dB</span>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Receiver &middot; Chapter 4</span>
+<h3>Neural Network Receiver</h3>
+<p>A 6-12-6 network learns the power amplifier from measured samples, and frequentative decision feedback uses it to estimate and subtract the amplifier's distortion.</p>
+<span class="result">48x fewer bit errors at 3 dB back-off</span>
+</div>
+</div>
+<figure class="fig reveal" id="fig1">
+<svg class="diagram" viewBox="0 0 900 290" role="img" aria-label="Block diagram of the OFDM link with PAPR reduction at the transmitter and FFB at the receiver">
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#8695a8"/></marker></defs>
+<text x="20" y="26" class="dg-head">TRANSMITTER</text>
+<text x="20" y="186" class="dg-head">RECEIVER</text>
+<g class="dg-box"><rect x="20" y="40" width="70" height="52" rx="5"/><text x="55" y="70">Data bits</text></g>
+<g class="dg-box"><rect x="112" y="40" width="92" height="52" rx="5"/><text x="158" y="62">QAM</text><text x="158" y="79" class="dg-small">mapper</text></g>
+<g class="dg-box"><rect x="226" y="40" width="104" height="52" rx="5"/><text x="278" y="62">IFFT</text><text x="278" y="79" class="dg-small">oversampled x I</text></g>
+<g class="dg-box hi-amber"><rect x="352" y="40" width="160" height="52" rx="5"/><text x="432" y="62">PAPR reduction</text><text x="432" y="79" class="dg-small">RCF, RCT, SLM or PTS</text></g>
+<g class="dg-box"><rect x="534" y="40" width="84" height="52" rx="5"/><text x="576" y="62">Clipper</text><text x="576" y="79" class="dg-small">optional</text></g>
+<g class="dg-box hi-amber"><rect x="640" y="40" width="120" height="52" rx="5"/><text x="700" y="62">Power amplifier</text><text x="700" y="79" class="dg-small">Rapp SSPA</text></g>
+<g class="dg-box"><rect x="782" y="40" width="98" height="52" rx="5"/><text x="831" y="62">Transducer</text><text x="831" y="79" class="dg-small">7.9 to 14.1 kHz</text></g>
+<g class="dg-box hi-cyan"><rect x="560" y="116" width="320" height="44" rx="5"/><text x="720" y="136">BELLHOP channel, 2 km, 23 paths</text><text x="720" y="152" class="dg-small">plus white noise at the hydrophone</text></g>
+<g class="dg-box"><rect x="782" y="200" width="98" height="52" rx="5"/><text x="831" y="222">Hydrophone</text><text x="831" y="239" class="dg-small">FFT, 512 bins</text></g>
+<g class="dg-box"><rect x="652" y="200" width="108" height="52" rx="5"/><text x="706" y="222">Equalise</text><text x="706" y="239" class="dg-small">Y / H, known H</text></g>
+<g class="dg-box hi-green"><rect x="262" y="200" width="368" height="72" rx="5"/><text x="446" y="222">Frequentative decision feedback (FFB)</text><text x="446" y="241" class="dg-small">decide, reconstruct the transmitted signal, run it through the</text><text x="446" y="257" class="dg-small">learned 6-12-6 amplifier network, subtract the distortion, repeat</text></g>
+<g class="dg-box"><rect x="112" y="200" width="128" height="52" rx="5"/><text x="176" y="222">Decisions</text><text x="176" y="239" class="dg-small">QAM demapper</text></g>
+<g class="dg-box"><rect x="20" y="200" width="70" height="52" rx="5"/><text x="55" y="230">Data bits</text></g>
+<g class="dg-arrow">
+<line x1="90" y1="66" x2="110" y2="66"/><line x1="204" y1="66" x2="224" y2="66"/><line x1="330" y1="66" x2="350" y2="66"/>
+<line x1="512" y1="66" x2="532" y2="66"/><line x1="618" y1="66" x2="638" y2="66"/><line x1="760" y1="66" x2="780" y2="66"/>
+<line x1="831" y1="92" x2="831" y2="114"/><line x1="831" y1="160" x2="831" y2="198"/>
+<line x1="782" y1="226" x2="762" y2="226"/><line x1="652" y1="226" x2="632" y2="226"/>
+<line x1="262" y1="226" x2="242" y2="226"/><line x1="112" y1="226" x2="92" y2="226"/>
+</g>
+</svg>
+<figcaption><b>Figure 1.</b> The link I studied. Amber blocks are where PAPR is created or reduced, blue is the ocean channel, green is the receiver side distortion removal.</figcaption>
+</figure>
+<h3 class="subhead">Results at a glance</h3>
+<div class="stat-grid">
+<div class="stat-card reveal"><div class="num">5.58 dB</div><div class="lbl">PAPR removed by four clip and filter passes</div></div>
+<div class="stat-card reveal"><div class="num amber">42.2%</div><div class="lbl">Ideal class B efficiency, up from 22.2%</div></div>
+<div class="stat-card reveal"><div class="num">48x</div><div class="lbl">Fewer bit errors with FFB at 3 dB back-off</div></div>
+<div class="stat-card reveal"><div class="num amber">55.6%</div><div class="lbl">Amplifier efficiency at the back-off FFB allows</div></div>
+<div class="stat-card reveal"><div class="num">22</div><div class="lbl">Unit tests behind these numbers</div></div>
+</div>
+</div>
+</section>
+
+<section id="lab">
+<div class="wrap wide">
+<h2 data-index="02">Interactive Lab</h2>
+<p class="section-lead">
+The <strong style="color:var(--text);">Transmitter</strong> view generates random OFDM symbols and applies the method
+you pick; the PAPR distribution, amplifier efficiency, distortion and spectrum update as symbols accumulate. The
+<strong style="color:var(--text);">Receiver</strong> view runs the whole link, amplifier, channel, noise and FFB, with
+the neural network weights trained in Python. The <strong style="color:var(--text);">Channel</strong> view shows the
+BELLHOP multipath and the guard interval it calls for.
+</p>
+<div id="papr-lab" class="plab-root">
+<div class="plab-loading">Loading the lab&hellip;</div>
+<noscript><div class="plab-loading">The lab needs JavaScript. The figures below show the same results.</div></noscript>
+</div>
+</div>
+</section>
+
+<section id="papr">
+<div class="wrap">
+<h2 data-index="03">OFDM Peaks and How They Are Measured</h2>
+<div class="prose">
+<p>An OFDM symbol is the inverse FFT of N data symbols X<sub>k</sub>. When N is large, the time samples behave like
+complex Gaussian noise, so their power follows an exponential distribution and a few samples are much stronger
+than the rest. The PAPR of one symbol is its peak sample power over its mean power, and because it changes from
+symbol to symbol it is reported as a complementary cumulative distribution function (CCDF), Pr[PAPR &gt; z].
+Every PAPR on this page is read at CCDF 10<sup>-3</sup>: the level exceeded by one symbol in a thousand.</p>
+</div>
+<div class="equation">PAPR = max<sub>n</sub> |x[n]|<sup>2</sup> / E|x[n]|<sup>2</sup> &nbsp;&nbsp;&nbsp; CCDF(z) &asymp; 1 &minus; (1 &minus; e<sup>&minus;z</sup>)<sup>N</sup></div>
+<div class="prose">
+<p>The closed form treats the N Nyquist rate samples as independent. The transmitted analogue signal peaks
+between those samples, so PAPR has to be measured on an oversampled signal: I zero pad the middle of the
+spectrum by a factor I before the IFFT, with I = 4 whenever accurate peaks matter.</p>
+</div>
+<div class="chip-row">
+<span class="chip">Chapter 3: 128 subcarriers, QPSK</span><span class="chip">Chapter 4: 512 subcarriers in 6.25 kHz</span>
+<span class="chip">FFT 8192 at 100 kHz</span><span class="chip">Band 7.9 to 14.1 kHz around 11 kHz</span><span class="chip">20,000 symbols per curve</span>
+</div>
+<figure class="fig reveal" id="fig2"><img src="figures/papr_ccdf_basics.png" alt="CCDF of OFDM PAPR for 64, 256 and 1024 subcarriers" loading="lazy"><figcaption><b>Figure 2.</b> PAPR distribution for three OFDM sizes, oversampled (solid) and at the Nyquist rate (dashed), with the closed form (dotted).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>At CCDF 10<sup>-3</sup> the PAPR is 11.03 dB for 128 subcarriers and 11.49 dB for 512,
+measured with fourfold oversampling. Sampling at the Nyquist rate underestimates it by 0.34 to
+0.48 dB, and at the Nyquist rate the simulation agrees with the closed form to within 0.17 dB
+for every size from 64 to 1024.</div>
+<div class="prose">
+<p>Why the peaks matter for energy: an amplifier backed off by the PAPR so that its peaks just reach saturation
+averages about (&pi;/4)&middot;10<sup>&minus;PAPR/20</sup> efficiency if it is an ideal class B stage, and
+0.5&middot;10<sup>&minus;PAPR/10</sup> for class A. Real amplifiers do worse, but the scaling holds: every decibel
+of PAPR removed lets the same battery radiate the same power for longer. I use the class B rule as a simple,
+comparable figure of merit throughout.</p>
+</div>
+</div>
+</section>
+
+<section id="rcf">
+<div class="wrap">
+<h2 data-index="04">Repeated Clipping and Filtering</h2>
+<div class="prose">
+<p>Clipping is the simplest way to remove peaks: every sample above a threshold is scaled down to it with its
+phase kept. I set the threshold through the clipping ratio CR, the clipping power over the mean power of the
+symbol, so the amplitude limit is &radic;(CR&middot;E|x|<sup>2</sup>). Clipping alone throws energy outside the
+band, so repeated clipping and filtering (RCF) follows every clip with a frequency domain filter: FFT, zero the
+out-of-band bins, inverse FFT. The filter lets a few peaks grow back, so the clip and filter pair is repeated,
+four times here. Armstrong introduced the idea for radio OFDM [1]; my thesis applied it to underwater acoustic
+OFDM and mapped its tradeoffs.</p>
+</div>
+<div class="chip-row"><span class="chip">128 subcarriers, QPSK</span><span class="chip">Oversampling I = 2</span><span class="chip">CR = 3 (4.77 dB)</span><span class="chip">1 to 4 passes</span><span class="chip">20,000 symbols</span></div>
+<figure class="fig reveal" id="fig3"><img src="figures/rcf_ccdf.png" alt="PAPR CCDF after one to four RCF passes" loading="lazy"><figcaption><b>Figure 3.</b> PAPR after one to four clip and filter passes, with a single clip without the filter for comparison.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>The PAPR at CCDF 10<sup>-3</sup> falls from 10.97 dB to 7.86, 6.59, 5.83 and
+5.39 dB after one to four passes. Four passes remove 5.58 dB of PAPR and lift the ideal class B
+efficiency from 22.2% to 42.2%, a factor of 1.90.</div>
+<figure class="fig reveal" id="fig4"><img src="figures/rcf_spectrum.png" alt="Spectrum after clipping only and after RCF" loading="lazy"><figcaption><b>Figure 4.</b> One clip without the filter reaches 5.29 dB PAPR but pushes power out of the band; RCF keeps the spectrum clean.</figcaption></figure>
+<div class="prose">
+<p>The cost of RCF is in-band distortion: the clipped energy that stays inside the band adds a noise like error to
+every subcarrier, 20.0 dB below the signal for this setting. I measure the price as the extra SNR a QPSK
+link needs to reach a bit error rate of 10<sup>-4</sup> in white noise; without clipping that SNR is 11.41 dB.
+Because the added error is fixed once the data are known, the bit error rate is computed exactly from each bit's
+noiseless decision margin rather than by counting errors, which removes Monte Carlo noise from the table.</p>
+</div>
+<h3 class="subhead">Table 1: RCF parameter study, four passes, 10,000 symbols per row</h3>
+<div class="table-wrap"><table class="data"><thead><tr><th>Oversampling I</th><th>CR (dB)</th><th>PAPR at 10<sup>-3</sup> (dB)</th><th>In-band SDR (dB)</th><th>SNR for BER 10<sup>-4</sup> (dB)</th><th>SNR cost (dB)</th></tr></thead><tbody>
+<tr><td>1</td><td>4 (6.02)</td><td>6.02</td><td>27.3</td><td>11.54</td><td>0.14</td></tr>
+<tr><td>1</td><td>3 (4.77)</td><td>4.79</td><td>21.7</td><td>11.92</td><td>0.51</td></tr>
+<tr><td>1</td><td>2 (3.01)</td><td>3.12</td><td>15.4</td><td>13.99</td><td>2.58</td></tr>
+<tr><td>1</td><td>1.75 (2.43)</td><td>2.62</td><td>13.6</td><td>15.91</td><td>4.50</td></tr>
+<tr><td>1</td><td>1.5 (1.76)</td><td>2.09</td><td>11.8</td><td>22.73</td><td>11.32</td></tr>
+<tr><td>2</td><td>4 (6.02)</td><td>6.46</td><td>25.3</td><td>11.62</td><td>0.22</td></tr>
+<tr><td>2</td><td>3 (4.77)</td><td>5.41</td><td>20.0</td><td>12.17</td><td>0.76</td></tr>
+<tr><td>2</td><td>2 (3.01)</td><td>4.16</td><td>14.2</td><td>14.92</td><td>3.52</td></tr>
+<tr><td>2</td><td>1.75 (2.43)</td><td>3.86</td><td>12.8</td><td>17.52</td><td>6.11</td></tr>
+<tr><td>2</td><td>1.5 (1.76)</td><td>3.58</td><td>11.2</td><td>floor above 10<sup>-4</sup></td><td>&infin;</td></tr>
+<tr><td>4</td><td>4 (6.02)</td><td>6.87</td><td>25.3</td><td>11.62</td><td>0.22</td></tr>
+<tr><td>4</td><td>3 (4.77)</td><td>5.80</td><td>20.0</td><td>12.17</td><td>0.76</td></tr>
+<tr><td>4</td><td>2 (3.01)</td><td>4.48</td><td>14.3</td><td>14.88</td><td>3.47</td></tr>
+<tr><td>4</td><td>1.75 (2.43)</td><td>4.11</td><td>12.8</td><td>17.45</td><td>6.04</td></tr>
+<tr><td>4</td><td>1.5 (1.76)</td><td>3.73</td><td>11.3</td><td>floor above 10<sup>-4</sup></td><td>&infin;</td></tr>
+</tbody></table></div>
+<figure class="fig reveal" id="fig5"><img src="figures/rcf_tradeoff.png" alt="PAPR and SNR cost against clipping ratio" loading="lazy"><figcaption><b>Figure 5.</b> The RCF tradeoff for oversampling I = 1 to 4: PAPR after four passes and the SNR a QPSK link needs for a bit error rate of 10<sup>-4</sup>.</figcaption></figure>
+<div class="callout model"><span class="k">Reading the tradeoff</span>With I = 2, CR = 3 cuts the PAPR to 5.41 dB for 0.76 dB more SNR, and CR = 2
+reaches 4.16 dB for 3.52 dB. Below CR = 2 the distortion grows faster than the peaks shrink,
+and at CR = 1.5 with filtering the bit error rate never reaches 10<sup>-4</sup>: the clipping itself sets an error
+floor. Without the filter (I = 1) the same CR reaches 10<sup>-4</sup> at 22.7 dB, at the cost of
+out-of-band power.</div>
+</div>
+</section>
+
+<section id="companding">
+<div class="wrap">
+<h2 data-index="05">Rooting Companding</h2>
+<div class="prose">
+<p>Companding compresses large amplitudes instead of cutting them. My rooting companding transform raises each
+sample's amplitude to a power R below one and keeps its phase, f(x) = |x|<sup>R</sup>&middot;x/|x|, where R = 0.5 is
+square root companding and I explored R from 0.1 to 0.9. The receiver restores the amplitudes with
+|y|<sup>1/R</sup> before its FFT. Because the peak amplitude is raised to the same power, the PAPR in dB shrinks
+roughly in proportion to R.</p>
+</div>
+<figure class="fig reveal" id="fig6"><img src="figures/rct.png" alt="Rooting companding CCDF and bit error rate" loading="lazy"><figcaption><b>Figure 6.</b> Rooting companding for R = 0.3 to 0.9 (left) and the bit error rate when the receiver expands the samples (right).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>In the thesis setting (Nyquist rate, cyclic prefix included) R = 0.5 takes the PAPR from
+10.51 dB to 5.85 dB. With fourfold oversampling the original 10.84 dB becomes 9.95,
+8.07, 6.03 and 3.78 dB for R = 0.9, 0.7, 0.5 and 0.3. For a bit error rate of 10<sup>-4</sup>, R = 0.5
+needs 14.26 dB of SNR, 2.71 dB more than no companding, because expanding the samples also
+stretches the noise.</div>
+<div class="callout note"><span class="k">Spectrum</span>Companding is a nonlinear operation, so it also spreads power outside
+the band. With fourfold oversampling, R = 0.5 sends 1.9% of the transmitted power outside the band
+(-17.2 dB), against 0.2% for a single clip, and its in-band distortion sits 15.4 dB below the signal. A practical RCT transmitter
+therefore adds a band limiting filter, the same compromise RCF makes explicitly.</div>
+</div>
+</section>
+
+<section id="slm-pts">
+<div class="wrap">
+<h2 data-index="06">Selected Mapping and Partial Transmit Sequences</h2>
+<div class="prose">
+<p>Distortion based methods change the signal; SLM and PTS only choose among equivalent versions of it. SLM
+multiplies the data by U different phase sequences drawn from {&plusmn;1, &plusmn;j}, computes U inverse FFTs and
+transmits the candidate with the lowest PAPR, sending log<sub>2</sub>U bits of side information so the receiver can
+undo the rotation [12]. PTS splits the subcarriers into V adjacent blocks, computes one inverse FFT per block, and
+searches the W<sup>V&minus;1</sup> combinations of block phase factors for the lowest peak, costing
+(V&minus;1)&middot;log<sub>2</sub>W side information bits [13, 14]. Neither adds distortion; both spend computation
+and a little rate.</p>
+</div>
+<figure class="fig reveal" id="fig7"><img src="figures/slm_pts.png" alt="SLM and PTS CCDF curves" loading="lazy"><figcaption><b>Figure 7.</b> SLM against the closed form (left) and PTS for four block and phase settings (right), 256 subcarriers, 10,000 symbols.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>SLM with U = 16 lowers the PAPR from 11.15 dB to 8.03 dB (3.12 dB) for 4
+side bits, and at the Nyquist rate the simulation matches the closed form (1 &minus; (1 &minus; e<sup>&minus;z</sup>)<sup>N</sup>)<sup>U</sup>
+to within 0.06 dB for every U. PTS reaches 9.18 dB with 4 blocks and 7.75 dB with 8 blocks and two
+phase factors, and 8.38 dB with 4 blocks and four phase factors.</div>
+<h3 class="subhead">Table 2: every method on one footing, 128 subcarriers, fourfold oversampling, QPSK</h3>
+<div class="table-wrap"><table class="data"><thead><tr><th>Method</th><th>PAPR at 10<sup>-3</sup> (dB)</th><th>In-band SDR (dB)</th><th>Out-of-band power (dB)</th><th>Side information (bits)</th><th>FFT work per symbol</th><th>Class B efficiency</th></tr></thead><tbody>
+<tr><td>Original OFDM</td><td>10.92</td><td>none</td><td>none</td><td>0</td><td>1</td><td>22.3% (1.00x)</td></tr>
+<tr><td>Clipping only (CR 3)</td><td>5.29</td><td>25.0</td><td>-27.0</td><td>0</td><td>1</td><td>42.7% (1.91x)</td></tr>
+<tr><td>RCF (CR 3, 4 passes)</td><td>5.82</td><td>20.0</td><td>none</td><td>0</td><td>9</td><td>40.2% (1.80x)</td></tr>
+<tr><td>Rooting companding (R 0.5)</td><td>6.06</td><td>15.4</td><td>-17.2</td><td>0</td><td>1</td><td>39.1% (1.75x)</td></tr>
+<tr><td>SLM (U 16)</td><td>7.55</td><td>none</td><td>none</td><td>4</td><td>16</td><td>32.9% (1.47x)</td></tr>
+<tr><td>PTS (V 8, W 2)</td><td>7.26</td><td>none</td><td>none</td><td>7</td><td>8</td><td>34.1% (1.53x)</td></tr>
+</tbody></table></div>
+<figure class="fig reveal" id="fig8"><img src="figures/method_comparison.png" alt="PAPR reached by every method" loading="lazy"><figcaption><b>Figure 8.</b> The PAPR each method reaches, with the ideal class B amplifier efficiency it allows.</figcaption></figure>
+<div class="prose">
+<p>The table is the design space in one view. Clipping and RCF remove the most PAPR for the least computation
+but add distortion; rooting companding is cheap but spreads the spectrum; SLM and PTS are clean but need side
+information and several inverse FFTs per symbol. A battery powered modem that can afford a little distortion gets
+the most from RCF, and that distortion is exactly what the receiver side of my thesis removes.</p>
+</div>
+</div>
+</section>
+
+<section id="receiver">
+<div class="wrap">
+<h2 data-index="07">Receiver: Learning the Amplifier and Removing Its Distortion</h2>
+<div class="prose">
+<p>Transmitter methods reduce the peaks, but a real amplifier still compresses whatever peaks remain, and the
+cheaper and more efficient the amplifier, the harder it compresses. My idea was to leave the amplifier alone and
+clean up its distortion at the receiver, where computation is less constrained than in a battery powered
+transmitter.</p>
+</div>
+<h3 class="subhead">The amplifier</h3>
+<div class="prose">
+<p>I model the transmit amplifier as a solid state power amplifier (Rapp model, smoothness p = 2), which
+compresses amplitude and leaves phase alone. Its drive is set by the input back-off, how far the saturation level
+sits above the RMS input amplitude, and I evaluate 3, 5 and 7 dB. By Bussgang's theorem the output is a scaled copy
+of the input plus a distortion term uncorrelated with it, y = &alpha;x + d, and that distortion d is what the
+receiver has to remove.</p>
+</div>
+<h3 class="subhead">The network</h3>
+<div class="prose">
+<p>The receiver does not know the amplifier's equations, so it learns them. The time signal's amplitudes are
+reshaped into vectors of six consecutive samples, one hidden layer of 12 sigmoid neurons maps them to six output
+amplitudes (162 weights in total), and the network is trained with the Levenberg-Marquardt algorithm [9] on 25,800
+amplifier samples measured at 35 dB SNR, split randomly 70/15/15 with validation based early stopping.</p>
+</div>
+<figure class="fig reveal" id="fig9"><img src="figures/amplifier_network.png" alt="Amplifier curves, learned curves and the training history" loading="lazy"><figcaption><b>Figure 9.</b> The amplifier at three back-off levels and what the network learned (left); training history at 5 dB back-off (right).</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>At 5 dB back-off training stops at epoch 44 after 3.7 s with a validation MSE of
+1.4&times;10<sup>-4</sup> and a test MSE of 1.4&times;10<sup>-4</sup>. Up to three times the RMS amplitude the learned curve stays within
+0.054 of the true one at every back-off, and the Bussgang gain it implies, 0.9147, matches the exact
+0.9146. Each output depends on its own input: nudging a neighbouring input moves it by at most
+2.2% as much, so the network has correctly learned that the amplifier has no memory.</div>
+<h3 class="subhead">The channel</h3>
+<div class="prose">
+<p>The channel is a BELLHOP ray tracing model of the chapter 4 link: 100 m of water, the transmitter at 30 m and
+the hydrophone at 50 m, 2 km apart, at 11 kHz, with the sound speed rising from 1482 m/s at the surface to 1498.4 m/s
+at 50 m over a sandy bottom. The arrivals are read with the parser I validated in my BELLHOP report.</p>
+</div>
+<figure class="fig reveal" id="fig10"><img src="figures/bellhop_channel.png" alt="Sound speed profile, BELLHOP arrivals and frequency response" loading="lazy"><figcaption><b>Figure 10.</b> Sound speed profile and geometry, the 23 BELLHOP arrivals at 2 km, and the resulting frequency response across the band.</figcaption></figure>
+<div class="callout result"><span class="k">Physical check</span>The first arrival reaches the hydrophone after 1.3374 s; the straight line distance at the
+harmonic mean sound speed predicts 1.3368 s, a difference of 0.048%. Across the band the response swings
+from -26.3 dB to about +7 dB, with 7.6% of the subcarriers faded by more than 10 dB.</div>
+<div class="callout note"><span class="k">Guard interval</span>The channel's rms delay spread is 23.0 ms, its last arrival comes 230 ms after
+the first, and 99.4% of its energy lands within 100 ms. The link model gives each subcarrier the channel's
+frequency response (thesis equation 4-18), which holds when the guard interval covers the multipath; the Channel
+view of the lab shows how the energy outside the guard falls as the guard grows, and what that costs in airtime.</div>
+<h3 class="subhead">Frequentative decision feedback</h3>
+<div class="prose">
+<p>The received subcarriers are Y<sub>k</sub> = H<sub>k</sub>(&alpha;X<sub>k</sub> + D<sub>k</sub>) + W<sub>k</sub>,
+where D<sub>k</sub> is the FFT of the amplifier distortion. D depends on the whole transmitted symbol, so the
+receiver cannot compute it until it knows the symbol, and it cannot know the symbol reliably until D is removed.
+FFB breaks the circle by iterating, the approach Tellado, Hoo and Cioffi [7] and Chen and Haimovich [8] took for
+known clipping; my contribution was to let a learned model stand in for the amplifier, so the receiver never needs
+the amplifier's equations:</p>
+</div>
+<ol class="steps">
+<li>Equalise with the known channel: Z<sub>k</sub> = Y<sub>k</sub> / H<sub>k</sub>, and start with D = 0.</li>
+<li>Decide: X&#770;<sub>k</sub> is the nearest QAM point to (Z<sub>k</sub> &minus; D<sub>k</sub>) / &alpha;.</li>
+<li>Reconstruct the transmitted signal from the decisions: x&#770; = IFFT(X&#770;), oversampled four times.</li>
+<li>Run it through the learned amplifier: y&#770; = network(|x&#770;|), with the phase of x&#770;.</li>
+<li>Estimate the distortion, D = FFT(y&#770; &minus; &alpha;x&#770;) on the in-band bins, and return to step 2.</li>
+</ol>
+<figure class="fig reveal" id="fig11"><img src="figures/ffb_ber.png" alt="Bit error rate with and without FFB in white noise and over BELLHOP" loading="lazy"><figcaption><b>Figure 11.</b> 64-QAM at 5 dB back-off: without distortion removal, with FFB using the learned network (one and three passes) and the exact amplifier, and a perfectly linear amplifier for reference. 400 symbols (1,228,800 bits) per point.</figcaption></figure>
+<div class="callout result"><span class="k">Result</span>In white noise the amplifier alone leaves an error floor of 1.0&times;10<sup>-3</sup> at 40 dB SNR; one FFB pass
+with the learned network removes it, and after three passes the link needs 22.59 dB for a bit error rate of
+10<sup>-3</sup>, against 22.55 dB for a perfectly linear amplifier. Over the BELLHOP channel the floor of
+1.8&times;10<sup>-3</sup> at 40 dB falls to 3.7&times;10<sup>-4</sup> with the learned network and 3.7&times;10<sup>-4</sup> with the exact equations; the
+linear amplifier gives 3.5&times;10<sup>-4</sup>. The learned network performs as well as knowing the amplifier exactly.</div>
+<figure class="fig reveal" id="fig12"><img src="figures/ffb_backoff.png" alt="Bit error rate at 3, 5 and 7 dB back-off with and without FFB" loading="lazy"><figcaption><b>Figure 12.</b> 64-QAM over the BELLHOP channel at three amplifier back-off levels, with and without FFB.</figcaption></figure>
+<div class="callout model"><span class="k">What FFB buys the battery</span>At 3 dB back-off the amplifier alone leaves 1.7&times;10<sup>-2</sup> of the bits wrong at
+40 dB SNR; FFB brings that to 3.5&times;10<sup>-4</sup>, 48 times fewer errors and level with a linear amplifier
+(3.5&times;10<sup>-4</sup>). Of the 3, 5 and 7 dB back-off levels, only 7 dB lets this link reach a bit error rate of 10<sup>-3</sup>
+without FFB (36.8 dB SNR); with FFB it gets there at 3 dB back-off (36.2 dB, against 36.3 dB
+for a linear amplifier). An ideal class B amplifier averages 55.6% efficiency at 3 dB back-off and 35.1% at 7 dB,
+so for the same radiated power it draws 1.58 times less from the battery. A clipper ahead of the
+amplifier behaves the same way: 4.9&times;10<sup>-3</sup> without FFB and 3.8&times;10<sup>-4</sup> with it at 40 dB.</div>
+<figure class="fig reveal" id="fig13"><img src="figures/constellation.png" alt="64-QAM constellation before and after FFB" loading="lazy"><figcaption><b>Figure 13.</b> 64-QAM at 5 dB back-off and 35 dB SNR, before and after three FFB passes.</figcaption></figure>
+<div class="prose">
+<p>Over the BELLHOP channel FFB recovers linear amplifier performance and no more: what remains is set by the
+subcarriers sitting in deep fades, which only channel coding or diversity can fix. That is the natural limit of
+receiver side distortion removal, and it is why the white noise and channel results are shown side by side.</p>
+</div>
+</div>
+</section>
+
+<section id="applications">
+<div class="wrap">
+<h2 data-index="08">Applications</h2>
+<div class="concept-grid three">
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Ocean observation</span>
+<h3>Long-term Sensor Networks</h3>
+<p>Moored and seabed networks that report temperature, currents, acoustics or water quality for months. Energy per bit sets how long a deployment lasts, and lower PAPR plus receiver side cleanup lets the same battery carry more data.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#00e68a;">
+<span class="concept-tag">Autonomy</span>
+<h3>Vehicles and Gliders</h3>
+<p>AUV and glider telemetry and command links, where every watt spent on the acoustic modem is a watt not spent on propulsion or sensing.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent);">
+<span class="concept-tag">Offshore</span>
+<h3>Energy and Infrastructure</h3>
+<p>Wireless monitoring of subsea oil and gas equipment, pipelines and offshore wind foundations, where cables are expensive and divers are dangerous.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#a78bfa;">
+<span class="concept-tag">Safety</span>
+<h3>Early Warning and Security</h3>
+<p>Tsunami and seabed pressure buoys, harbour and coastal surveillance, and naval sensor networks that must run unattended.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:#e879f9;">
+<span class="concept-tag">Radio</span>
+<h3>4G, 5G, Wi-Fi and Satellite</h3>
+<p>The same peak problem shapes 4G and 5G (it is why the LTE uplink uses single carrier FDMA), Wi-Fi, digital television and satellite links; clipping and filtering and neural network amplifier models are standard tools there.</p>
+</div>
+<div class="concept-card reveal" style="--card-color:var(--accent-2);">
+<span class="concept-tag">Next steps</span>
+<h3>Where the Work Went</h3>
+<p>A long short-term memory network for PAPR reduction in underwater OFDM (JASA 2021 [16], KSII Transactions 2023 [17]), and co-authored deep learning OFDM receivers [18, 19].</p>
+</div>
+</div>
+</div>
+</section>
+
+<section id="code">
+<div class="wrap">
+<h2 data-index="09">Code and Reproducibility</h2>
+<div class="prose">
+<p>This work is open source at <a href="https://github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction" target="_blank" rel="noopener">github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction</a>:
+a numpy package for the OFDM model, the PAPR methods, the amplifier, the BELLHOP channel, the neural network and the
+FFB receiver, together with the experiment and figure scripts, the browser lab and the tests.</p>
+</div>
+<div class="chip-row">
+<span class="chip">paprlab/ofdm.py</span><span class="chip">paprlab/transmitter.py</span><span class="chip">paprlab/amplifier.py</span>
+<span class="chip">paprlab/channel.py</span><span class="chip">paprlab/neural.py</span><span class="chip">paprlab/receiver.py</span><span class="chip">lab/papr-lab.js</span>
+</div>
+<div class="callout result"><span class="k">How the numbers are protected</span>22 unit tests pin the claims on this page, including exact inverses, SLM
+against its closed form, PTS against brute force, the BELLHOP geometry check, and FFB removing every noiseless
+distortion error. The lab's JavaScript engine recomputes nine reference cases exported by Python on every page load,
+and every number on this page is filled in from the experiment output by the build script, which refuses to build
+if one is missing.</div>
+<pre class="cmd">pip install -r requirements.txt
+python experiments/run_all.py        # every experiment, about 5 minutes
+python experiments/make_figures.py   # the figures
+python build.py                      # this page
+python -m unittest discover -s tests</pre>
+<a class="btn solid" href="https://github.com/raza-waleed/underwater-acoustic-ofdm-papr-reduction" target="_blank" rel="noopener">Browse the repository</a>
+</div>
+</section>
+
+<section id="lessons">
+<div class="wrap">
+<h2 data-index="10">Lessons Learned</h2>
+<div class="prose">
+<p><strong>State the measurement with the number.</strong> A PAPR means little without its CCDF level and sampling
+rate, and an SNR means little without saying where it was measured; every number on this page carries both.</p>
+<p><strong>Distortion moves; it does not vanish.</strong> Clipping trades peaks for in-band error and spectrum, RCF
+trades the spectrum back for computation, rooting companding trades peaks for noise enhancement, and SLM and PTS
+trade them for side information. The useful question is always which resource the system can spare.</p>
+<p><strong>A receiver can clean up the amplifier, not the ocean.</strong> FFB with a 162 weight network matches a
+linear amplifier, which means the transmitter can run its amplifier much harder; beyond that point the fading
+channel sets the error rate, and the next gains come from coding and diversity.</p>
+<p><strong>Size the waveform from the channel.</strong> The BELLHOP channel spreads its energy over tens of
+milliseconds, which sets the guard interval and the symbol length, the same lesson my lake trial report drew from its
+measured coherence time.</p>
+</div>
+</div>
+</section>
+
+<section id="references">
+<div class="wrap">
+<h2 data-index="11">Nomenclature and References</h2>
+<div class="nomen">
+<div><b>AWGN</b>additive white Gaussian noise</div><div><b>BER</b>bit error rate</div>
+<div><b>CCDF</b>complementary cumulative distribution function</div><div><b>CR</b>clipping ratio (clipping over mean power)</div>
+<div><b>FFB</b>frequentative decision feedback</div><div><b>I</b>oversampling factor</div>
+<div><b>OFDM</b>orthogonal frequency division multiplexing</div><div><b>PAPR</b>peak-to-average power ratio</div>
+<div><b>PTS</b>partial transmit sequences</div><div><b>QAM</b>quadrature amplitude modulation</div>
+<div><b>RCF</b>repeated clipping and filtering</div><div><b>RCT</b>rooting companding transform</div>
+<div><b>SDR</b>signal to distortion ratio</div><div><b>SLM</b>selected mapping</div>
+<div><b>SNR</b>signal to noise ratio</div><div><b>SSPA</b>solid state power amplifier</div>
+</div>
+<h3 class="subhead">References</h3>
+<ul class="pub-list refs">
+<li>[1] J. Armstrong, "Peak-to-average power reduction for OFDM by repeated clipping and frequency domain filtering," <i>Electronics Letters</i>, vol. 38, no. 5, pp. 246-247, 2002.</li>
+<li>[2] R. W. B&auml;uml, R. F. H. Fischer and J. B. Huber, "Reducing the peak-to-average power ratio of multicarrier modulation by selected mapping," <i>Electronics Letters</i>, vol. 32, no. 22, pp. 2056-2057, 1996.</li>
+<li>[3] S. H. M&uuml;ller and J. B. Huber, "OFDM with reduced peak-to-average power ratio by optimum combination of partial transmit sequences," <i>Electronics Letters</i>, vol. 33, no. 5, pp. 368-369, 1997.</li>
+<li>[4] X. Wang, T. T. Tjhung and C. S. Ng, "Reduction of peak-to-average power ratio of OFDM system using a companding technique," <i>IEEE Transactions on Broadcasting</i>, vol. 45, no. 3, pp. 303-307, 1999.</li>
+<li>[5] R. van Nee and A. de Wild, "Reducing the peak-to-average power ratio of OFDM," <i>Proc. IEEE Vehicular Technology Conference</i>, 1998, pp. 2072-2076.</li>
+<li>[6] C. Rapp, "Effects of HPA-nonlinearity on a 4-DPSK/OFDM-signal for a digital sound broadcasting system," <i>Proc. Second European Conference on Satellite Communications</i>, 1991, pp. 179-184.</li>
+<li>[7] J. Tellado, L. M. C. Hoo and J. M. Cioffi, "Maximum-likelihood detection of nonlinearly distorted multicarrier symbols by iterative decoding," <i>IEEE Transactions on Communications</i>, vol. 51, no. 2, pp. 218-228, 2003.</li>
+<li>[8] H. Chen and A. M. Haimovich, "Iterative estimation and cancellation of clipping noise for OFDM signals," <i>IEEE Communications Letters</i>, vol. 7, no. 7, pp. 305-307, 2003.</li>
+<li>[9] M. T. Hagan and M. B. Menhaj, "Training feedforward networks with the Marquardt algorithm," <i>IEEE Transactions on Neural Networks</i>, vol. 5, no. 6, pp. 989-993, 1994.</li>
+<li>[10] M. B. Porter, <i>The BELLHOP Manual and User's Guide</i>, Heat, Light, and Sound Research, 2011.</li>
+<li>[11] X. Ma, W. Raza, Z. Wu, M. Bilal, Z. Zhou and A. Ali, "A nonlinear distortion removal based on deep neural network for underwater acoustic OFDM communication with the mitigation of peak to average power ratio," <i>Applied Sciences</i>, vol. 10, no. 14, 4986, 2020.</li>
+<li>[12] W. Raza, X. Ma, A. Ali, A. Raza and S. Shaikh, "Performance analysis of selective mapping in underwater acoustic orthogonal frequency division multiplexing communication system," <i>Engineering, Technology &amp; Applied Science Research</i>, vol. 11, no. 1, pp. 6696-6702, 2021.</li>
+<li>[13] W. Raza, X. Ma, T. Wang and M. Bilal, "Low complexity energy efficient OFDM communication system over underwater acoustic channel by partial transmit sequence peak to average power ratio reduction," <i>J. Acoust. Soc. Am.</i>, vol. 146, no. 4, pp. 2764-2765, 2019.</li>
+<li>[14] W. Raza, X. Ma, A. Ali, Z. A. Shah and G. Mehdi, "An implementation of partial transmit sequences to design energy efficient underwater acoustic OFDM communication system," arXiv:2007.01273, 2020.</li>
+<li>[15] W. Raza, "PAPR reduction with nonlinear distortion removal using machine learning in underwater acoustic OFDM communication system," M.Eng. thesis, Harbin Engineering University, 2021.</li>
+<li>[16] W. Raza, X. Ma and M. Bilal, "Long short-term memory neural network assisted peak to average power ratio reduction for underwater acoustic OFDM communication," <i>J. Acoust. Soc. Am.</i>, vol. 150, p. A319, 2021.</li>
+<li>[17] W. Raza, X. Ma, H. Song, A. Ali, H. Zubairi and K. Acharya, "Long short-term memory neural network assisted peak to average power ratio reduction for underwater acoustic OFDM communication," <i>KSII Transactions on Internet and Information Systems</i>, vol. 17, 2023.</li>
+<li>[18] A. Ali, B. Chen, W. Raza, A. H. Samo and A. Ali, "Reduction of PAPR by convolutional neural network with soft feedback in an underwater acoustic OFDM communication," <i>Proc. 18th International Bhurban Conference on Applied Sciences and Technology</i>, 2021.</li>
+<li>[19] A. Ali, B. Chen, W. Raza, A. H. Samo and A. Ali, "Deep learning based OFDM system for underwater acoustic communication with mitigation of peak to average power ratio," <i>International Journal of Scientific &amp; Technology Research</i>, vol. 9, no. 12, pp. 117-122, 2020.</li>
+</ul>
+<div class="availability">
+<strong>Materials.</strong> The code, experiments, tests, figures, browser lab, and the BELLHOP input and arrivals output
+for this work are in the repository. BELLHOP itself is Michael B. Porter's Acoustics Toolbox and is cited, not
+redistributed. The thesis document is summarised here and not published.
+</div>
+</div>
+</section>
+
+
+<footer>
+<div class="wrap">
+<a class='back-link' href='https://waleedraza.dev/underwater-acoustics/papr-reduction/'>&rarr; live page on waleedraza.dev</a><br>
+&copy; 2026 WALEED RAZA
+</div>
+</footer>
+
+<script type="application/json" id="paprlab-data">{"uwa":{"subcarriers":512,"bandwidth_hz":6250.0,"fft_points":8192,"fs_hz":100000.0,"centre_hz":11000.0,"sound_speed":1500.0},"channel":{"geometry":{"depth_m":100.0,"source_m":30.0,"receiver_m":50.0,"range_m":2000.0,"freq_hz":11000.0,"ssp":[[0,1482.0],[10,1484.6],[20,1489.6],[30,1492.8],[40,1496.8],[50,1498.4],[100,1498.4]],"bottom":{"speed":1600.0,"density":1.8,"attenuation_db_per_wavelength":0.8}},"arrivals":[{"delay_ms":0.0,"amp":0.8054238,"phase_deg":147.4129,"top":0,"bottom":1,"angle":5.985},{"delay_ms":5.5363,"amp":0.9145889,"phase_deg":318.1655,"top":1,"bottom":1,"angle":-6.48},{"delay_ms":8.1927,"amp":0.9532807,"phase_deg":307.4422,"top":1,"bottom":1,"angle":7.38},{"delay_ms":14.6789,"amp":1.0,"phase_deg":114.7195,"top":2,"bottom":1,"angle":-8.415},{"delay_ms":16.3865,"amp":0.8292594,"phase_deg":21.2617,"top":1,"bottom":2,"angle":9.945},{"delay_ms":24.5345,"amp":0.8286807,"phase_deg":177.8249,"top":2,"bottom":2,"angle":-11.205},{"delay_ms":29.6872,"amp":0.8121263,"phase_deg":161.2864,"top":2,"bottom":2,"angle":12.33},{"delay_ms":39.3748,"amp":0.7973285,"phase_deg":319.8287,"top":3,"bottom":2,"angle":-13.68},{"delay_ms":44.3945,"amp":0.642943,"phase_deg":183.2194,"top":2,"bottom":3,"angle":15.03},{"delay_ms":55.8251,"amp":0.6103186,"phase_deg":333.2066,"top":3,"bottom":3,"angle":-16.425},{"delay_ms":63.4312,"amp":0.5769431,"phase_deg":313.5738,"top":3,"bottom":3,"angle":17.505},{"delay_ms":76.4665,"amp":0.5156514,"phase_deg":104.1937,"top":4,"bottom":3,"angle":-18.9},{"delay_ms":84.2081,"amp":0.3337597,"phase_deg":290.6691,"top":3,"bottom":4,"angle":20.07},{"delay_ms":98.8894,"amp":0.2294645,"phase_deg":76.154,"top":4,"bottom":4,"angle":-21.465},{"delay_ms":108.7581,"amp":0.1671276,"phase_deg":60.3643,"top":4,"bottom":4,"angle":22.5},{"delay_ms":124.9587,"amp":0.1097215,"phase_deg":225.2024,"top":5,"bottom":4,"angle":-23.85},{"delay_ms":135.0495,"amp":0.04521643,"phase_deg":48.2622,"top":4,"bottom":5,"angle":24.93},{"delay_ms":152.7486,"amp":0.03149109,"phase_deg":220.179,"top":5,"bottom":5,"angle":-26.235},{"delay_ms":164.6564,"amp":0.02555874,"phase_deg":216.4883,"top":5,"bottom":5,"angle":27.18},{"delay_ms":183.738,"amp":0.01974025,"phase_deg":31.8971,"top":6,"bottom":5,"angle":-28.44},{"delay_ms":195.8733,"amp":0.007465959,"phase_deg":215.3225,"top":5,"bottom":6,"angle":29.43},{"delay_ms":216.2905,"amp":0.005948871,"phase_deg":31.7646,"top":6,"bottom":6,"angle":-30.645},{"delay_ms":230.006,"amp":0.005192811,"phase_deg":29.8906,"top":6,"bottom":6,"angle":31.545}],"first_arrival_s":1.3374,"straight_line_s":1.3368,"first_arrival_error_pct":0.0476,"rms_delay_ms":22.9721,"max_delay_ms":230.006,"energy_after_ms":{"25":37.7215,"50":15.4049,"100":0.5769},"response_db":{"freq_hz":[7875.0,7923.828125,7972.65625,8021.484375,8070.3125,8119.140625,8167.96875,8216.796875,8265.625,8314.453125,8363.28125,8412.109375,8460.9375,8509.765625,8558.59375,8607.421875,8656.25,8705.078125,8753.90625,8802.734375,8851.5625,8900.390625,8949.21875,8998.046875,9046.875,9095.703125,9144.53125,9193.359375,9242.1875,9291.015625,9339.84375,9388.671875,9437.5,9486.328125,9535.15625,9583.984375,9632.8125,9681.640625,9730.46875,9779.296875,9828.125,9876.953125,9925.78125,9974.609375,10023.4375,10072.265625,10121.09375,10169.921875,10218.75,10267.578125,10316.40625,10365.234375,10414.0625,10462.890625,10511.71875,10560.546875,10609.375,10658.203125,10707.03125,10755.859375,10804.6875,10853.515625,10902.34375,10951.171875,11000.0,11048.828125,11097.65625,11146.484375,11195.3125,11244.140625,11292.96875,11341.796875,11390.625,11439.453125,11488.28125,11537.109375,11585.9375,11634.765625,11683.59375,11732.421875,11781.25,11830.078125,11878.90625,11927.734375,11976.5625,12025.390625,12074.21875,12123.046875,12171.875,12220.703125,12269.53125,12318.359375,12367.1875,12416.015625,12464.84375,12513.671875,12562.5,12611.328125,12660.15625,12708.984375,12757.8125,12806.640625,12855.46875,12904.296875,12953.125,13001.953125,13050.78125,13099.609375,13148.4375,13197.265625,13246.09375,13294.921875,13343.75,13392.578125,13441.40625,13490.234375,13539.0625,13587.890625,13636.71875,13685.546875,13734.375,13783.203125,13832.03125,13880.859375,13929.6875,13978.515625,14027.34375,14076.171875],"mag_db":[-4.6252,0.292,-2.0683,3.6323,-1.9395,-5.2268,1.7977,-2.9061,4.8023,2.3852,-7.1099,-8.2399,-7.0734,-3.315,-6.2306,1.8105,-2.1542,4.4214,1.7253,3.7404,3.0436,-3.2055,-1.7437,3.4029,3.9166,-9.8614,0.9327,-3.1357,-2.8484,-4.7321,3.6118,-7.2634,-6.1226,6.2505,1.3428,1.7339,-1.3079,-3.6463,2.1068,-2.1142,-2.3389,-1.2454,-1.2542,1.2924,3.1371,2.3887,5.4694,-4.053,3.8576,2.8306,-12.5221,-10.4137,-14.377,-4.5358,-11.116,0.9895,-2.5021,-1.464,1.4307,0.2778,-0.1806,-2.2783,0.6185,0.1023,-2.893,-7.5954,-4.821,-12.995,1.5223,0.4842,-2.4896,-0.1084,-9.5758,5.0847,2.1135,-7.9147,-7.4098,-0.5941,-7.0767,-11.4797,2.0847,0.0852,-4.9531,2.129,3.645,4.5849,2.9746,-7.8515,-7.6748,-3.3216,-6.3737,-1.2838,-15.6218,0.8209,-4.3775,-3.7016,1.1953,-1.6613,-1.9222,-1.6962,-0.5687,-4.6125,3.0146,2.3947,-6.9256,-3.6263,3.6506,-10.6145,-2.1935,0.3454,1.3632,-10.1557,-14.0463,-7.0664,4.581,-0.3518,1.9882,0.994,-4.7159,-9.0222,-5.0065,-0.6846,-2.5015,0.891,-7.9832,6.9461,-11.7727,-7.2605]}},"networks":{"3":{"weights":{"inputs":6,"hidden":12,"w1":[[0.0185652945,-0.0549312897,0.1297232565,-2.7279722618,-0.01664636,0.0304609372],[-3.005832101,-0.017576133,-0.0347213311,0.0558572038,-0.0501382194,0.0082691875],[-0.1210483257,-2.8262717614,-0.0373019707,0.0276047931,-0.0048972496,-0.0217216152],[-0.0731839048,0.1747143592,1.868207543,-0.1832392148,0.0413842883,0.0010255254],[0.1048935279,-0.3387921944,-3.1207338971,0.3483816975,-0.1281816366,0.0978254182],[-0.0066543874,-0.0131774395,0.0072421047,0.0249383377,-2.5987118337,0.0017585913],[-0.0517112739,0.0200852863,-0.0034132035,0.0004942524,-0.0209617306,-2.75267293],[-0.279571718,0.1033020767,-0.1067012065,0.1401460853,-0.0785135301,-1.5409100911],[0.0343760366,0.0100542003,-0.0752370891,0.0643753515,-4.9904211161,-0.0358315068],[-0.0358908109,0.0651436154,0.0651764622,2.6929450005,-0.1042665063,0.1763418458],[-0.3323485373,-0.1492330246,-0.0943757907,0.2067029362,-0.105373964,0.1081314185],[-0.0753905766,0.2433653172,-2.8579531922,-0.2717612595,0.0485060681,-0.0311651279]],"b1":[-1.8222252536,-2.2152324396,-2.1726217984,0.9095621539,0.3622096838,-2.7992601305,-2.0530841222,-1.1575317617,-2.3432545714,0.0822011229,1.3955123482,-2.2191774421],"w2":[[-0.0293011014,-3.093424509,0.0306515746,0.4061306955,0.0935657492,0.0151352951,-0.0217489435,0.0798735451,0.0014064834,-0.0398448899,1.4502260373,0.2193101498],[-0.0815774641,0.039109975,-3.0991547622,1.0611312615,0.4809151344,-0.020250647,-0.0372641588,0.1373200973,0.0104901076,0.030304418,0.7825487888,0.5624263339],[0.0408154658,-0.0102943441,0.0029711205,2.7566762048,1.0479078253,-0.0163084393,-0.0133408299,0.0826810138,-0.0005135768,0.0195611407,-0.2600560204,-1.7069877024],[-3.5686074258,-0.0096771742,0.0012058934,-0.2043740199,-0.1629374385,0.0621865479,0.0596613399,-0.1965813921,-0.007628669,-0.7436314915,0.3989683559,-0.2374474009],[-0.0613155639,-0.0202641901,0.0290812254,0.1713420452,0.0513034558,-3.1899499596,0.0021284553,0.0151301367,-0.6135806158,-0.0225230379,0.0619518757,0.1030006452],[0.019089023,-0.0303501588,0.0273244342,0.0583872658,0.0422544968,0.0167221919,-4.0275175806,1.361793404,0.0039116169,0.0080092637,-0.5579180801,0.0132092931]],"b2":[-0.4513574309,-0.6755970511,-1.4691159921,1.6342173754,0.8050410894,1.2702139643],"in_range":[0.008501620328601826,3.145862813918226],"out_range":[0.006252820547064661,1.411104629196064]},"alpha_network":0.8511,"alpha_exact":0.8511},"5":{"weights":{"inputs":6,"hidden":12,"w1":[[-0.2785365055,-0.2593981321,0.2007924318,0.4913286311,0.0792218887,0.0920836204],[-0.0231304659,-0.0772612935,0.3771117456,1.9897326486,-0.4434174158,0.1140708218],[-0.0931174295,-1.6264541127,-0.596859463,0.1783355498,-0.1459549898,0.052984939],[0.0278453563,0.0293789191,-0.3887825223,0.4083549695,1.9143425633,-0.0263331817],[-0.0868922606,-0.0762436173,2.2806333586,0.0544267514,-0.1285368644,0.0325166535],[-0.0131683189,0.1038155332,-0.3124397183,-1.2794002653,-0.9569120839,0.096397233],[-2.2056108009,-0.0100354616,-0.008957778,0.0287835063,-0.0279047672,0.0014935675],[-0.3118276607,-0.1713019422,-0.3010541336,0.1005109773,-0.2662495152,-0.0745453808],[-0.0261050273,-2.0898989876,0.2832528219,-0.1125710124,0.1376846157,-0.0640670173],[0.2255067324,-0.1747349809,-0.7908495415,0.2240581245,0.2266788579,0.165271885],[0.0220959833,-0.0592329296,0.1099191387,-0.1096873082,0.227955114,-2.4672749731],[0.0394541839,-0.1506802165,0.3859756592,-0.5734966773,1.9704776055,0.7487538988]],"b1":[0.2886092447,1.3527318012,-1.4503000956,1.407307541,1.4052650005,-1.4885571289,-1.4770850364,-0.26853224,-1.3055764953,0.2287766444,-1.5312705935,1.5328438397],"w2":[[0.6396456423,-0.2727660828,-0.0108134851,-0.0604347303,0.0218872249,-0.1829897933,-3.3988890505,0.724749755,-0.0939166169,-0.1248600946,-0.0381427853,-0.0403495625],[0.5982291295,-0.0635557123,-2.0740706701,-0.1032342848,0.0319697308,0.1061916951,-0.0820191096,1.3497611609,-2.0259048641,0.7217867779,0.0986685497,0.1823267411],[-0.5644732658,-0.0527204631,-1.6822252457,-0.4251749236,2.7441131448,-0.4981849449,0.0408586881,0.3617490572,1.1851672991,0.6940300804,0.0118705416,0.1382943987],[-1.1324162412,2.4084743822,0.261551481,0.3561938304,-0.0920210384,-1.7468499212,0.0338272129,0.8826711821,-0.3152079472,0.2942258985,-0.1775060564,-0.510163589],[-0.69205417,-0.59727251,0.2513210746,2.1591132833,0.1725850156,-0.9983475505,-0.027333276,0.6120654445,-0.1721290856,-0.5982351551,0.1726074612,1.0917035305],[-0.2341016538,0.5444581805,-0.374526632,0.0089494108,-0.2379766615,0.5104798794,-0.0403344834,0.2370143801,0.3561611627,-0.3477809214,-2.6910243793,0.6738203993]],"b2":[0.9418093653,0.0096725409,-1.4269587374,-0.6613300857,-1.10800405,0.3869812878],"in_range":[0.007151751724077454,3.0685572555417306],"out_range":[0.004446967372458475,1.7387847976258646]},"alpha_network":0.9147,"alpha_exact":0.9146},"7":{"weights":{"inputs":6,"hidden":12,"w1":[[0.0102087279,-0.1084302852,0.1218179295,-0.1737181864,-2.9196665791,-0.0403611163],[0.0578292931,-0.0782401636,0.0012022215,1.301804871,-0.0556397805,0.0062746987],[-1.4910555893,0.0440787135,0.0555763041,0.0017146193,-0.0046079929,0.0086370873],[-0.2642621747,0.4585602951,-0.1771740824,3.5273491478,0.139505114,-0.1423927718],[-0.0709983149,0.0031058776,0.092723411,-0.0989000217,0.7874524234,0.0192338215],[-0.0119787953,0.2345745774,1.2494832357,0.0757317888,-0.0640303423,0.0008481863],[0.2994473957,0.9837312737,1.7380337501,3.0819371929,-1.9189132026,0.5405532858],[-0.6870098111,1.5616042816,-2.6629711188,3.2919909702,-3.4588692241,-5.2308552374],[-0.1237225542,1.3596293757,-0.0055660287,-0.0510813448,0.0065320673,-0.0003556259],[0.0150681936,-0.0260703076,-0.0148069612,0.0544114503,-0.0402732883,-1.6446668437],[-0.1345781974,0.1482453432,0.1211070716,0.092775992,-0.1424848931,0.0053801207],[-2.6452543355,-1.1148276476,-0.9978680849,0.2185128856,0.1138309438,-0.2254061578]],"b1":[2.181571475,0.8067968267,-0.8877932186,-2.4774277284,0.3241006931,1.116511964,0.3067167469,-0.5366307405,0.8021587347,-1.1416390552,-0.0557457062,2.3195485991],"w2":[[-0.0274635412,-0.2224930682,-4.2841343101,-0.0550856234,0.6303008106,-0.1987619998,-0.011521998,-0.0005265133,-0.243879271,0.0002262674,3.7547834324,0.2593600081],[0.0655271655,0.5305714346,0.2691389708,0.1689524411,-1.1697601073,0.7347174652,0.0340729415,-0.0069956831,4.9489027604,-0.0330663885,-6.8292808858,0.2985672198],[-0.0224670061,-0.3366290786,-0.0389035568,-0.1994595626,0.5400447951,4.5387723955,0.1075074824,0.0014299018,-0.8547784209,0.023422007,0.6549986391,0.0013555772],[0.0192776067,4.5278845308,0.0692830114,-0.5169956423,0.4675946374,-0.1252081159,-0.0007396526,0.001054174,0.1930498638,0.0241435414,0.8492734419,-0.0027046421],[1.247232908,0.8351769635,-0.0014154375,0.1594012196,7.0474140628,-0.1711134381,0.0006506555,0.0041112699,0.4784755024,0.0593393492,-3.7819152361,-0.0320607745],[0.0713988934,0.1963411791,0.0577741013,0.0496953919,-0.3211277515,0.0074593625,0.0048854878,-0.051919745,0.0372970083,-3.5654366001,-0.6691072018,0.0037767063]],"b2":[-0.2878390601,-0.3871332495,-2.8673220517,-3.4711202583,-3.768139974,1.5200363298],"in_range":[0.0023257734080265884,3.076100781189146],"out_range":[0.007823078168028831,2.112388206079785]},"alpha_network":0.9574,"alpha_exact":0.9573}},"receiver":{"snr_db":[10.0,12.5,15.0,17.5,20.0,22.5,25.0,27.5,30.0,32.5,35.0,37.5,40.0],"curves":{"awgn_linear":[0.1522,0.1058,0.06369,0.02952,0.008554,0.001071,3.255e-05,8.138e-07,0.0,0.0,0.0,0.0,0.0],"awgn_ibo5_none":[0.1573,0.1134,0.07522,0.04451,0.02295,0.01076,0.005313,0.002831,0.001909,0.001385,0.001154,0.001075,0.001003],"awgn_ibo5_ffb_nn_1":[0.1567,0.1108,0.06917,0.03404,0.0105,0.001397,4.801e-05,0.0,0.0,0.0,0.0,0.0,0.0],"awgn_ibo5_ffb_nn_3":[0.1578,0.1114,0.06891,0.03264,0.009225,0.001123,3.743e-05,0.0,0.0,0.0,0.0,0.0,0.0],"awgn_ibo5_ffb_exact_3":[0.1578,0.1115,0.06893,0.03269,0.00923,0.001118,3.581e-05,0.0,0.0,0.0,0.0,0.0,0.0],"bellhop_linear":[0.1987,0.1524,0.1095,0.07399,0.0468,0.02798,0.01586,0.008822,0.004869,0.002584,0.001403,0.000743,0.000354],"bellhop_ibo5_none":[0.2035,0.1581,0.1187,0.08395,0.0574,0.03713,0.02354,0.01443,0.008853,0.005425,0.003544,0.002407,0.001782],"bellhop_ibo5_ffb_nn_1":[0.2042,0.1571,0.115,0.07836,0.04976,0.02924,0.01658,0.009092,0.004923,0.002586,0.001377,0.0007243,0.0003743],"bellhop_ibo5_ffb_nn_3":[0.2064,0.1591,0.1161,0.07844,0.04916,0.02879,0.01631,0.008957,0.004888,0.002562,0.001362,0.0007259,0.0003703],"bellhop_ibo5_ffb_exact_3":[0.2065,0.1592,0.1162,0.07845,0.04919,0.02881,0.01634,0.008964,0.004883,0.002559,0.001361,0.0007267,0.0003687],"bellhop_ibo3_none":[0.2089,0.1676,0.1289,0.09847,0.07375,0.05521,0.04153,0.03196,0.02601,0.02202,0.01945,0.01791,0.01697],"bellhop_ibo3_ffb_nn_3":[0.2169,0.1714,0.1269,0.0872,0.05399,0.03085,0.01702,0.00894,0.00501,0.00269,0.00141,0.0006991,0.000354],"awgn_ibo3_none":[0.164,0.1222,0.08928,0.06223,0.04385,0.03171,0.02496,0.02071,0.01883,0.01765,0.01689,0.01648,0.01624],"awgn_ibo3_ffb_nn_3":[0.1663,0.1188,0.07739,0.038,0.01063,0.001181,3.418e-05,0.0,0.0,0.0,0.0,0.0,0.0],"bellhop_ibo7_none":[0.1997,0.1541,0.1127,0.07761,0.05018,0.03061,0.01783,0.01004,0.00552,0.002932,0.00165,0.0008341,0.0004004],"bellhop_ibo7_ffb_nn_3":[0.2007,0.1541,0.1115,0.07546,0.04771,0.02825,0.01615,0.008854,0.004839,0.002526,0.001425,0.0007178,0.0003394],"awgn_ibo7_none":[0.1544,0.108,0.06806,0.03483,0.01308,0.003251,0.000599,8.789e-05,1.383e-05,4.069e-06,8.138e-07,2.441e-06,1.628e-06],"awgn_ibo7_ffb_nn_3":[0.1546,0.1071,0.06567,0.03047,0.008708,0.001018,3.092e-05,0.0,0.0,0.0,0.0,0.0,0.0],"bellhop_ibo5clip5_none":[0.2057,0.1607,0.1221,0.08824,0.06223,0.04206,0.02851,0.01929,0.01313,0.009364,0.007145,0.005643,0.004864],"bellhop_ibo5clip5_ffb_nn_3":[0.2119,0.165,0.1213,0.08187,0.05113,0.02929,0.01659,0.00919,0.004971,0.002666,0.001444,0.0007487,0.0003776]}},"reference":{"qpsk_bits":[[0,1,1,0,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,0,1,0,1,0,1,0,0,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,0,1,0,1,1,1,1,1,1,1,0,1,1,0,1,0,1,1,1,0,0,1,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,1,1,1,1,0,0,1,1,1,1,0,1,0,0,1,0,1,1,0,0,0,0,1,1,1,0,1,1,0,1,1,0,0,0,0,1,0,1,1,0,1,1,1,0,1],[0,1,0,0,1,1,0,0,0,0,1,0,0,0,0,1,0,1,0,1,1,1,1,1,0,1,1,1,0,1,1,1,0,1,0,0,1,1,0,0,0,1,1,0,1,1,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,1,0,1,1,1,1,1,0,0,0,0,1,1,1,1,0,1,0,1,0,1,1,1,1,1,1,0,0,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1,1,0,0,1,0,1,0,1,0,0,1,1,1,1]],"qam64_bits":[[0,1,0,0,0,0,0,1,1,0,1,0,1,1,1,0,1,0,0,1,0,1,1,0,1,0,0,0,0,1,0,0,1,1,1,0,0,0,1,1,1,0,0,1,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,1,1,1,0,0,1,0,0,0,1,0,0,1,0,1,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,0,1,0,1,0,0,1,0,1,0,0,1,0,0,1,0,0,1,1,0,0,1,0,0,1,0,0,0,1,1,1,0,0,1,0,0,1,0,1,0,1,0,0,1,0,0,1,1,0,1,0,1,1,0,0,1,1,1,1,1,1,1,1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,0,1,1,0,1,0,0,1,1,0,0,0,1,1,0,1,1,1,0,0,1,0,0,1,0,1,0,0,0,1,0,0,1,1,0,1,1,0,0,1,1,1,0,0,0,0,0,1,0,1,1,1,1,0,0,1,0,0,0,1,1,0,0,1,1,0,0,0,0,0,1,1,1,0,1,0,1,0,0,0,0,1,1,1,0,0,1,1,1,1,0,0,0,0,1,1,0,0,0,0,0,0,0,1,1,1,0,1,1,0,0,0,1,0,0,0,1,1,0,0,1,0,1,1,1,0,1,1,0,0,1,1,0,1,1,1,1,0,1,1,1,0,0,0,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,1,0,0,1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,0,0,1,0,1,1,1,1,0,1,1,0,0,0,0,0,1,0,0,1,0,1,1,1,0],[1,1,0,0,0,0,1,1,0,1,1,1,1,1,0,0,0,0,1,0,1,0,0,0,0,1,0,0,1,1,1,0,1,0,1,1,0,0,1,1,0,1,1,1,1,0,0,1,0,0,0,0,0,0,0,1,0,0,1,1,0,1,0,0,1,1,1,0,1,1,0,0,0,1,0,1,0,0,0,1,0,0,1,0,0,1,1,0,1,1,1,1,1,0,0,1,1,0,1,0,1,1,0,0,1,0,1,0,1,0,0,0,1,0,0,0,0,1,1,0,1,1,1,0,1,1,1,0,1,0,1,1,0,1,1,1,0,1,1,1,0,0,0,1,1,0,0,0,1,0,1,0,1,0,0,0,1,1,1,1,1,1,0,0,1,0,0,0,0,1,0,1,1,0,1,1,1,0,0,0,1,0,1,1,1,1,0,0,1,0,1,1,1,1,0,1,0,0,0,1,0,1,0,1,1,0,0,0,0,1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1,1,1,1,1,1,1,0,1,0,0,1,0,1,0,1,0,0,0,1,1,0,1,1,1,1,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,1,0,1,0,1,0,0,0,0,1,0,1,0,0,0,1,1,1,0,0,0,1,1,0,1,1,1,1,1,0,0,0,0,1,0,0,0,1,1,1,1,1,0,0,1,1,1,0,0,0,0,1,1,0,1,1,1,1,0,0,1,0,1,1,0,0,0,1,1,0,0,1,0,1,1,0,1,0,1,0,1,0,0,0,1,0,0,1,0,0,1,1,1,0,1,0,0,0,0,0]],"slm_phase_index":[[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[1,2,0,2,0,3,1,3,0,1,2,1,1,2,3,3,3,0,3,3,3,1,2,0,3,1,1,3,2,1,0,0,2,2,0,3,2,1,3,2,2,1,3,3,2,3,3,1,0,3,1,0,1,1,2,2,3,3,2,2,1,1,0,3],[0,3,0,3,2,1,0,3,3,1,3,0,0,0,1,3,0,3,1,1,2,2,1,1,0,3,3,0,0,2,1,3,1,3,2,2,2,2,2,1,2,0,2,3,2,0,0,2,1,1,2,0,1,0,3,2,2,1,0,0,3,1,2,3],[2,2,0,1,2,1,1,3,0,2,2,2,0,3,3,2,3,2,1,1,0,3,2,3,2,1,2,3,0,0,2,1,1,2,0,0,2,3,0,0,0,3,0,1,2,3,3,1,1,3,3,2,2,1,3,2,2,3,0,3,0,1,3,0]],"expect":{"papr_L4":[6.916,6.4068],"rcf_cr3_L2_passes":[[6.0873,5.7673],[5.551,5.3769],[5.2265,5.1407],[5.0352,4.9986]],"rct_r05_L4":[3.9541,3.6943],"slm_u4_L4":{"index":[1,3],"papr":[5.8084,6.3096]},"pts_v4_w2_L4":{"index":[1,6],"papr":[6.4031,5.8144]},"network_ibo5":{"input":[0.0,0.3182,0.6364,0.9545,1.2727,1.5909,1.9091,2.2273,2.5455,2.8636,3.1818,3.5],"output":[0.01896989,0.31680517,0.6351509,0.93833249,1.19936771,1.40183191,1.54563207,1.65814079,1.68846044,1.69898434,1.71793448,1.77675219]},"ffb_ibo5_alpha":0.9128837947,"ffb_ibo5_errors_per_pass":[0,0,0],"ffb_ibo5_soft_pass2":[[-0.154637385,-1.078790365],[-0.463805792,-0.151627761],[0.462892867,-0.153366853],[-0.15566061,0.154809323],[1.079463113,-0.769834102],[-0.768419964,0.156183959]],"channel_H":[[0,0.686541376,0.205796285],[1,-0.741201838,-0.20879075],[100,0.293386793,-0.615904303],[255,-0.835552403,-0.37660682],[256,-0.297658389,-0.506094193],[400,0.574322717,0.640398814],[511,-0.403673432,0.36049563]]}}}</script>
+<script>
+/* PAPR lab: the methods from my M.Eng. thesis, running live in the browser.
+ *
+ * A dependency free classic script, so it also works when the report is opened
+ * straight from disk. PaprLab.mount(root, data) builds three views:
+ *   Transmitter  PAPR reduction: repeated clipping and filtering, clipping,
+ *                rooting companding, selected mapping, partial transmit sequences
+ *   Receiver     frequentative decision feedback (FFB) with the learned amplifier
+ *   Channel      the BELLHOP 2 km channel and the guard interval it needs
+ * On load the engine recomputes the cases the Python reference exported
+ * (data.reference) and reports how many match.
+ */
+(function () {
+  'use strict';
+
+  /* ================================================================ FFT (radix 2, in place) */
+  const plans = {};
+  function plan(n) {
+    if (plans[n]) return plans[n];
+    const bits = Math.round(Math.log2(n));
+    if ((1 << bits) !== n) throw new Error('FFT size must be a power of two: ' + n);
+    const rev = new Uint32Array(n);
+    for (let i = 0; i < n; i++) {
+      let r = 0, v = i;
+      for (let b = 0; b < bits; b++) { r = (r << 1) | (v & 1); v >>= 1; }
+      rev[i] = r;
+    }
+    const cos = new Float64Array(n / 2), sin = new Float64Array(n / 2);
+    for (let k = 0; k < n / 2; k++) { cos[k] = Math.cos(2 * Math.PI * k / n); sin[k] = Math.sin(2 * Math.PI * k / n); }
+    return (plans[n] = { rev, cos, sin });
+  }
+
+  /* forward: exp(-j 2 pi k n / N); inverse: exp(+j ...) and 1/N, like numpy */
+  function fft(re, im, inverse) {
+    const n = re.length, p = plan(n), rev = p.rev;
+    for (let i = 0; i < n; i++) {
+      const j = rev[i];
+      if (j > i) { let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; }
+    }
+    const sgn = inverse ? 1 : -1;
+    for (let size = 2; size <= n; size <<= 1) {
+      const half = size >> 1, step = n / size;
+      for (let start = 0; start < n; start += size) {
+        for (let k = 0; k < half; k++) {
+          const wr = p.cos[k * step], wi = sgn * p.sin[k * step];
+          const a = start + k, b = a + half;
+          const xr = re[b] * wr - im[b] * wi, xi = re[b] * wi + im[b] * wr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi;
+          re[a] += xr; im[a] += xi;
+        }
+      }
+    }
+    if (inverse) for (let q = 0; q < n; q++) { re[q] /= n; im[q] /= n; }
+  }
+
+  /* ================================================================ random numbers */
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gaussian(rand) {
+    let spare = null;
+    return function () {
+      if (spare !== null) { const s = spare; spare = null; return s; }
+      let u = rand();
+      while (u < 1e-300) u = rand();
+      const v = rand(), m = Math.sqrt(-2 * Math.log(u));
+      spare = m * Math.sin(2 * Math.PI * v);
+      return m * Math.cos(2 * Math.PI * v);
+    };
+  }
+
+  /* ================================================================ Gray QAM, same mapping as paprlab.ofdm */
+  function grayToBinary(g) { let b = g; for (let s = g >> 1; s; s >>= 1) b ^= s; return b; }
+  function qam(order) {
+    const m = Math.round(Math.sqrt(order)), k = Math.round(Math.log2(order));
+    return { order, m, k, half: k / 2, norm: Math.sqrt(2 * (order - 1) / 3) };
+  }
+  function modulate(bits, q) {
+    const n = bits.length / q.k, re = new Float64Array(n), im = new Float64Array(n);
+    for (let s = 0; s < n; s++) {
+      let gi = 0, gq = 0;
+      const o = s * q.k;
+      for (let b = 0; b < q.half; b++) gi = (gi << 1) | bits[o + b];
+      for (let b = 0; b < q.half; b++) gq = (gq << 1) | bits[o + q.half + b];
+      re[s] = (2 * grayToBinary(gi) - (q.m - 1)) / q.norm;
+      im[s] = (2 * grayToBinary(gq) - (q.m - 1)) / q.norm;
+    }
+    return { re, im };
+  }
+  function level(v, q) { return Math.min(q.m - 1, Math.max(0, Math.round((v * q.norm + (q.m - 1)) / 2))); }
+  function countBitErrors(re, im, bits, q) {
+    let errors = 0;
+    for (let s = 0; s < re.length; s++) {
+      const li = level(re[s], q), lq = level(im[s], q);
+      const gi = li ^ (li >> 1), gq = lq ^ (lq >> 1), o = s * q.k;
+      for (let b = 0; b < q.half; b++) {
+        if (((gi >> (q.half - 1 - b)) & 1) !== bits[o + b]) errors++;
+        if (((gq >> (q.half - 1 - b)) & 1) !== bits[o + q.half + b]) errors++;
+      }
+    }
+    return errors;
+  }
+  function sliceInto(re, im, q, outRe, outIm) {
+    for (let s = 0; s < re.length; s++) {
+      outRe[s] = (2 * level(re[s], q) - (q.m - 1)) / q.norm;
+      outIm[s] = (2 * level(im[s], q) - (q.m - 1)) / q.norm;
+    }
+  }
+  function randomBits(rand, n) { const b = new Uint8Array(n); for (let i = 0; i < n; i++) b[i] = rand() < 0.5 ? 0 : 1; return b; }
+
+  /* ================================================================ OFDM (paprlab.ofdm.to_time / to_freq) */
+  function toTime(Xr, Xi, size) {
+    const N = Xr.length, h = N >> 1, re = new Float64Array(size), im = new Float64Array(size);
+    for (let k = 0; k < h; k++) { re[k] = Xr[k]; im[k] = Xi[k]; }
+    for (let k = h; k < N; k++) { re[size - N + k] = Xr[k]; im[size - N + k] = Xi[k]; }
+    fft(re, im, true);
+    const s = size / Math.sqrt(N);
+    for (let k = 0; k < size; k++) { re[k] *= s; im[k] *= s; }
+    return { re, im };
+  }
+  function toFreq(xr, xi, N) {
+    const size = xr.length, h = N >> 1, re = Float64Array.from(xr), im = Float64Array.from(xi);
+    fft(re, im, false);
+    const s = Math.sqrt(N) / size, Xr = new Float64Array(N), Xi = new Float64Array(N);
+    for (let k = 0; k < h; k++) { Xr[k] = re[k] * s; Xi[k] = im[k] * s; }
+    for (let k = h; k < N; k++) { Xr[k] = re[size - N + k] * s; Xi[k] = im[size - N + k] * s; }
+    return { re: Xr, im: Xi };
+  }
+  function paprDb(re, im) {
+    let mx = 0, sum = 0;
+    for (let i = 0; i < re.length; i++) { const p = re[i] * re[i] + im[i] * im[i]; sum += p; if (p > mx) mx = p; }
+    return 10 * Math.log10(mx / (sum / re.length));
+  }
+
+  /* ================================================================ transmitter methods */
+  function clipInPlace(re, im, ratio, fixedLevel) {
+    let lim = fixedLevel;
+    if (lim == null) {
+      let s = 0;
+      for (let i = 0; i < re.length; i++) { const a = Math.hypot(re[i], im[i]); s += a * a; }
+      lim = Math.sqrt(ratio * s / re.length);
+    }
+    for (let i = 0; i < re.length; i++) {
+      const a = Math.hypot(re[i], im[i]);
+      if (a > lim) { const f = lim / a; re[i] *= f; im[i] *= f; }
+    }
+  }
+  function bandLimitInPlace(re, im, N) {
+    const size = re.length, h = N >> 1;
+    fft(re, im, false);
+    for (let k = h; k < size - (N - h); k++) { re[k] = 0; im[k] = 0; }
+    fft(re, im, true);
+  }
+  function rcfInPlace(re, im, N, ratio, passes, onPass) {
+    for (let p = 0; p < passes; p++) {
+      clipInPlace(re, im, ratio);
+      bandLimitInPlace(re, im, N);
+      if (onPass) onPass(p, paprDb(re, im));
+    }
+  }
+  function rootInPlace(re, im, R) {
+    for (let i = 0; i < re.length; i++) {
+      const a = Math.hypot(re[i], im[i]);
+      if (a > 0) { const f = Math.pow(a, R - 1); re[i] *= f; im[i] *= f; }
+    }
+  }
+  const JPOW = [[1, 0], [0, 1], [-1, 0], [0, -1]];
+  function slmBest(X, phaseIndex, size) {
+    const N = X.re.length;
+    let best = null, bestP = Infinity, bestU = 0;
+    for (let u = 0; u < phaseIndex.length; u++) {
+      const pr = new Float64Array(N), pi = new Float64Array(N), row = phaseIndex[u];
+      for (let k = 0; k < N; k++) {
+        const w = JPOW[row[k]];
+        pr[k] = X.re[k] * w[0] - X.im[k] * w[1];
+        pi[k] = X.re[k] * w[1] + X.im[k] * w[0];
+      }
+      const x = toTime(pr, pi, size), p = paprDb(x.re, x.im);
+      if (p < bestP) { bestP = p; best = x; bestU = u; }
+    }
+    return { x: best, papr: bestP, index: bestU };
+  }
+  function ptsPhaseSet(W) { return W === 2 ? [[1, 0], [-1, 0]] : [[1, 0], [-1, 0], [0, 1], [0, -1]]; }
+  function ptsBest(X, V, W, size) {
+    const N = X.re.length, width = N / V, parts = [];
+    for (let v = 0; v < V; v++) {
+      const pr = new Float64Array(N), pi = new Float64Array(N);
+      for (let k = v * width; k < (v + 1) * width; k++) { pr[k] = X.re[k]; pi[k] = X.im[k]; }
+      parts.push(toTime(pr, pi, size));
+    }
+    const set = ptsPhaseSet(W), combos = Math.pow(W, V - 1);
+    const cr = new Float64Array(size), ci = new Float64Array(size);
+    let bestP = Infinity, bestC = 0;
+    for (let c = 0; c < combos; c++) {
+      cr.set(parts[0].re); ci.set(parts[0].im);
+      for (let v = 1; v < V; v++) {
+        const digit = Math.floor(c / Math.pow(W, V - 1 - v)) % W, w = set[digit], pv = parts[v];
+        for (let t = 0; t < size; t++) {
+          cr[t] += pv.re[t] * w[0] - pv.im[t] * w[1];
+          ci[t] += pv.re[t] * w[1] + pv.im[t] * w[0];
+        }
+      }
+      const p = paprDb(cr, ci);
+      if (p < bestP) { bestP = p; bestC = c; }
+    }
+    const xr = Float64Array.from(parts[0].re), xi = Float64Array.from(parts[0].im);
+    for (let v = 1; v < V; v++) {
+      const w = set[Math.floor(bestC / Math.pow(W, V - 1 - v)) % W], pv = parts[v];
+      for (let t = 0; t < size; t++) { xr[t] += pv.re[t] * w[0] - pv.im[t] * w[1]; xi[t] += pv.re[t] * w[1] + pv.im[t] * w[0]; }
+    }
+    return { x: { re: xr, im: xi }, papr: bestP, index: bestC };
+  }
+
+  /* ================================================================ amplifier and the learned network */
+  function rappInPlace(re, im, sat, p) {
+    for (let i = 0; i < re.length; i++) {
+      const a = Math.hypot(re[i], im[i]);
+      const g = Math.pow(1 + Math.pow(a / sat, 2 * p), -1 / (2 * p));
+      re[i] *= g; im[i] *= g;
+    }
+  }
+  function Network(w) {
+    this.I = w.inputs; this.H = w.hidden;
+    this.w1 = Float64Array.from([].concat.apply([], w.w1)); this.b1 = Float64Array.from(w.b1);
+    this.w2 = Float64Array.from([].concat.apply([], w.w2)); this.b2 = Float64Array.from(w.b2);
+    this.inLo = w.in_range[0]; this.inHi = w.in_range[1]; this.outLo = w.out_range[0]; this.outHi = w.out_range[1];
+  }
+  Network.prototype.predict = function (flat) {
+    const I = this.I, H = this.H, n = flat.length, pad = (I - (n % I)) % I;
+    const out = new Float64Array(n), buf = new Float64Array(I), s = new Float64Array(H);
+    for (let start = 0; start < n + pad; start += I) {
+      for (let i = 0; i < I; i++) {
+        const idx = start + i, v = idx < n ? flat[idx] : flat[n - 1];
+        buf[i] = 2 * (v - this.inLo) / (this.inHi - this.inLo) - 1;
+      }
+      for (let h = 0; h < H; h++) {
+        let z = this.b1[h];
+        for (let i = 0; i < I; i++) z += this.w1[h * I + i] * buf[i];
+        s[h] = 1 / (1 + Math.exp(-z));
+      }
+      for (let o = 0; o < I; o++) {
+        let y = this.b2[o];
+        for (let h = 0; h < H; h++) y += this.w2[o * H + h] * s[h];
+        if (start + o < n) out[start + o] = (y + 1) * (this.outHi - this.outLo) / 2 + this.outLo;
+      }
+    }
+    return out;
+  };
+  /* apply a transmitter model to a batch of symbols (concatenated, as numpy does) */
+  function modelBatch(model, xs) {
+    const size = xs[0].re.length, n = xs.length * size, out = [];
+    if (model.kind === 'exact') {
+      for (const x of xs) { const r = Float64Array.from(x.re), i = Float64Array.from(x.im); rappInPlace(r, i, model.sat, 2); out.push({ re: r, im: i }); }
+      return out;
+    }
+    const amps = new Float64Array(n);
+    xs.forEach((x, s) => { for (let t = 0; t < size; t++) amps[s * size + t] = Math.hypot(x.re[t], x.im[t]); });
+    const y = model.net.predict(amps);
+    xs.forEach((x, s) => {
+      const r = new Float64Array(size), i = new Float64Array(size);
+      for (let t = 0; t < size; t++) {
+        const a = amps[s * size + t], v = y[s * size + t];
+        if (a > 0) { r[t] = x.re[t] * v / a; i[t] = x.im[t] * v / a; } else { r[t] = v; i[t] = 0; }
+      }
+      out.push({ re: r, im: i });
+    });
+    return out;
+  }
+  function bussgang(xs, ys) {
+    let num = 0, den = 0;
+    xs.forEach((x, s) => { const y = ys[s]; for (let t = 0; t < x.re.length; t++) { num += x.re[t] * y.re[t] + x.im[t] * y.im[t]; den += x.re[t] * x.re[t] + x.im[t] * x.im[t]; } });
+    return num / den;
+  }
+
+  /* FFB (thesis Algorithm 1): Y received subcarriers per symbol, H channel.
+     Returns decisions after pass 0 and after the last pass, plus the soft values. */
+  function ffb(Ys, H, q, model, alpha, size, passes) {
+    const N = H.re.length;
+    const Z = Ys.map(Y => {
+      const r = new Float64Array(N), i = new Float64Array(N);
+      for (let k = 0; k < N; k++) {
+        const d = H.re[k] * H.re[k] + H.im[k] * H.im[k];
+        r[k] = (Y.re[k] * H.re[k] + Y.im[k] * H.im[k]) / d;
+        i[k] = (Y.im[k] * H.re[k] - Y.re[k] * H.im[k]) / d;
+      }
+      return { re: r, im: i };
+    });
+    let D = Ys.map(() => ({ re: new Float64Array(N), im: new Float64Array(N) }));
+    let first = null, last = null, soft = null;
+    for (let it = 0; it <= passes; it++) {
+      soft = Z.map((z, s) => {
+        const r = new Float64Array(N), i = new Float64Array(N);
+        for (let k = 0; k < N; k++) { r[k] = (z.re[k] - D[s].re[k]) / alpha; i[k] = (z.im[k] - D[s].im[k]) / alpha; }
+        return { re: r, im: i };
+      });
+      const dec = soft.map(v => { const r = new Float64Array(N), i = new Float64Array(N); sliceInto(v.re, v.im, q, r, i); return { re: r, im: i }; });
+      if (it === 0) first = dec;
+      last = dec;
+      if (it === passes) break;
+      const xs = dec.map(d => toTime(d.re, d.im, size));
+      const ys = modelBatch(model, xs);
+      D = xs.map((x, s) => {
+        const r = new Float64Array(size), i = new Float64Array(size);
+        for (let t = 0; t < size; t++) { r[t] = ys[s].re[t] - alpha * x.re[t]; i[t] = ys[s].im[t] - alpha * x.im[t]; }
+        return toFreq(r, i, N);
+      });
+    }
+    return { first, last, soft };
+  }
+
+  /* ================================================================ channel */
+  function channelResponse(arrivals, N, spacing, centre) {
+    const re = new Float64Array(N), im = new Float64Array(N);
+    for (let k = 0; k < N; k++) {
+      const f = centre + (k < N / 2 ? k : k - N) * spacing;
+      for (const a of arrivals) {
+        const ph = a.phase_deg * Math.PI / 180 + 2 * Math.PI * f * (a.delay_ms / 1000);
+        re[k] += a.amp * Math.cos(ph);
+        im[k] -= a.amp * Math.sin(ph);
+      }
+    }
+    let p = 0;
+    for (let k = 0; k < N; k++) p += re[k] * re[k] + im[k] * im[k];
+    const s = 1 / Math.sqrt(p / N);
+    for (let k = 0; k < N; k++) { re[k] *= s; im[k] *= s; }
+    return { re, im };
+  }
+
+  /* ================================================================ statistics helpers */
+  function quantile(sorted, q) {
+    if (!sorted.length) return NaN;
+    const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+  function ccdfCurve(sorted, grid) {
+    const n = sorted.length, out = [];
+    let j = 0;
+    for (const z of grid) {
+      while (j < n && sorted[j] <= z) j++;
+      out.push([z, 1 - j / n]);
+    }
+    return out;
+  }
+  const classB = db => 100 * (Math.PI / 4) * Math.pow(10, -db / 20);
+  const GRID = []; for (let z = 2; z <= 14.0001; z += 0.05) GRID.push(Math.round(z * 100) / 100);
+
+  /* ================================================================ verification against Python */
+  function verify(data) {
+    const ref = data.reference, e = ref.expect, checks = [];
+    const close = (a, b, tol) => Math.abs(a - b) <= tol;
+    const add = (name, ok, detail) => checks.push({ name, ok, detail });
+    const qp = qam(4), q64 = qam(64);
+    const Xs = ref.qpsk_bits.map(b => modulate(b, qp));
+    const px = Xs.map(X => { const x = toTime(X.re, X.im, 256); return paprDb(x.re, x.im); });
+    add('PAPR, 64 subcarriers, oversampled x4', px.every((v, i) => close(v, e.papr_L4[i], 6e-5)), px.map(v => v.toFixed(4)).join(', '));
+    const rcfOk = Xs.every((X, s) => {
+      const x = toTime(X.re, X.im, 128); let ok = true;
+      rcfInPlace(x.re, x.im, 64, 3, 4, (p, v) => { ok = ok && close(v, e.rcf_cr3_L2_passes[p][s], 6e-5); });
+      return ok;
+    });
+    add('Repeated clipping and filtering, 4 passes', rcfOk, 'CR 3, I 2');
+    const rct = Xs.map(X => { const x = toTime(X.re, X.im, 256); rootInPlace(x.re, x.im, 0.5); return paprDb(x.re, x.im); });
+    add('Rooting companding, R = 0.5', rct.every((v, i) => close(v, e.rct_r05_L4[i], 6e-5)), rct.map(v => v.toFixed(4)).join(', '));
+    const slm = Xs.map(X => slmBest(X, ref.slm_phase_index, 256));
+    add('Selected mapping, U = 4', slm.every((r, i) => r.index === e.slm_u4_L4.index[i] && close(r.papr, e.slm_u4_L4.papr[i], 6e-5)), 'candidate ' + slm.map(r => r.index).join(', '));
+    const pts = Xs.map(X => ptsBest(X, 4, 2, 256));
+    add('Partial transmit sequences, V = 4, W = 2', pts.every((r, i) => r.index === e.pts_v4_w2_L4.index[i] && close(r.papr, e.pts_v4_w2_L4.papr[i], 6e-5)), 'combination ' + pts.map(r => r.index).join(', '));
+    const net = new Network(data.networks['5'].weights);
+    const nOut = net.predict(Float64Array.from(e.network_ibo5.input));
+    add('Neural network forward pass (6-12-6)', e.network_ibo5.output.every((v, i) => close(nOut[i], v, 2e-8)), '12 amplitudes');
+    const X64 = ref.qam64_bits.map(b => modulate(b, q64));
+    const xs = X64.map(X => toTime(X.re, X.im, 256));
+    const sat = Math.pow(10, 5 / 20);
+    const ys = xs.map(x => { const r = Float64Array.from(x.re), i = Float64Array.from(x.im); rappInPlace(r, i, sat, 2); return { re: r, im: i }; });
+    const alpha = bussgang(xs, ys);
+    add('Bussgang gain of the amplifier', close(alpha, e.ffb_ibo5_alpha, 2e-9), alpha.toFixed(8));
+    const Ytx = ys.map(y => toFreq(y.re, y.im, 64));
+    const one = { re: new Float64Array(64).fill(1), im: new Float64Array(64) };
+    const out = ffb(Ytx, one, q64, { kind: 'net', net }, alpha, 256, 2);
+    const softOk = e.ffb_ibo5_soft_pass2.every((v, k) => close(out.soft[0].re[k], v[0], 2e-7) && close(out.soft[0].im[k], v[1], 2e-7));
+    add('FFB soft values after two passes', softOk, '6 subcarriers');
+    const H = channelResponse(data.channel.arrivals, data.uwa.subcarriers, data.uwa.bandwidth_hz / data.uwa.subcarriers, data.uwa.centre_hz);
+    const hOk = e.channel_H.every(([k, r, i]) => close(H.re[k], r, 2e-7) && close(H.im[k], i, 2e-7));
+    add('BELLHOP channel response', hOk, '7 subcarriers');
+    return checks;
+  }
+
+  /* ================================================================ drawing */
+  const C = { bg: '#0a0e14', panel: '#0d131e', grid: '#1c2634', axis: '#2a3648', text: '#c7d0dc', muted: '#8695a8',
+    cyan: '#39d2ff', orange: '#ffb020', green: '#00e68a', magenta: '#e879f9', violet: '#a78bfa', red: '#f87171' };
+  const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
+  const pow10 = e => e === 0 ? '1' : '10' + String(e).split('').map(ch => SUP[ch] || ch).join('');
+
+  function niceStep(span, target) {
+    const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+    return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * mag;
+  }
+  function Plot(canvas, height) { this.c = canvas; this.h = height; this.spec = null; }
+  Plot.prototype.draw = function (spec) {
+    if (spec) this.spec = spec;
+    spec = this.spec;
+    if (!spec) return;
+    const cv = this.c, dpr = window.devicePixelRatio || 1, W = Math.max(260, cv.clientWidth || 600), Hh = this.h;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(Hh * dpr); cv.style.height = Hh + 'px';
+    const g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, Hh);
+    const m = { l: spec.y.log ? 48 : 50, r: 12, t: spec.title ? 26 : 10, b: 38 };
+    const pw = W - m.l - m.r, ph = Hh - m.t - m.b;
+    const lx = spec.y.log;
+    const X = v => m.l + (v - spec.x.min) / (spec.x.max - spec.x.min) * pw;
+    const Y = lx ? v => m.t + (Math.log10(spec.y.max) - Math.log10(v)) / (Math.log10(spec.y.max) - Math.log10(spec.y.min)) * ph
+      : v => m.t + (spec.y.max - v) / (spec.y.max - spec.y.min) * ph;
+    g.fillStyle = C.panel; g.fillRect(m.l, m.t, pw, ph);
+    g.font = '11px "IBM Plex Mono", Consolas, monospace';
+    if (spec.title) { g.fillStyle = C.text; g.font = '600 12px Inter, system-ui, sans-serif'; g.fillText(spec.title, m.l, 16); g.font = '11px "IBM Plex Mono", Consolas, monospace'; }
+    (spec.bands || []).forEach(b => { g.fillStyle = b.color; g.fillRect(X(Math.max(b.x0, spec.x.min)), m.t, X(Math.min(b.x1, spec.x.max)) - X(Math.max(b.x0, spec.x.min)), ph); });
+    g.strokeStyle = C.grid; g.lineWidth = 1; g.fillStyle = C.muted; g.textAlign = 'center';
+    const xs = spec.x.step || niceStep(spec.x.max - spec.x.min, Math.max(3, Math.floor(pw / 70)));
+    for (let v = Math.ceil(spec.x.min / xs - 1e-9) * xs; v <= spec.x.max + 1e-9; v += xs) {
+      const px = Math.round(X(v)) + 0.5;
+      g.beginPath(); g.moveTo(px, m.t); g.lineTo(px, m.t + ph); g.stroke();
+      g.fillText(spec.x.fmt ? spec.x.fmt(v) : String(Math.round(v * 1000) / 1000), px, m.t + ph + 14);
+    }
+    g.textAlign = 'right';
+    if (lx) {
+      for (let e = Math.ceil(Math.log10(spec.y.min)); e <= Math.floor(Math.log10(spec.y.max)); e++) {
+        const py = Math.round(Y(Math.pow(10, e))) + 0.5;
+        g.beginPath(); g.moveTo(m.l, py); g.lineTo(m.l + pw, py); g.stroke();
+        g.fillText(pow10(e), m.l - 6, py + 4);
+      }
+    } else {
+      const ys = spec.y.step || niceStep(spec.y.max - spec.y.min, Math.max(3, Math.floor(ph / 45)));
+      for (let v = Math.ceil(spec.y.min / ys - 1e-9) * ys; v <= spec.y.max + 1e-9; v += ys) {
+        const py = Math.round(Y(v)) + 0.5;
+        g.beginPath(); g.moveTo(m.l, py); g.lineTo(m.l + pw, py); g.stroke();
+        g.fillText(spec.y.fmt ? spec.y.fmt(v) : String(Math.round(v * 1000) / 1000), m.l - 6, py + 4);
+      }
+    }
+    g.strokeStyle = C.axis; g.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+    g.save(); g.beginPath(); g.rect(m.l, m.t, pw, ph); g.clip();
+    (spec.hlines || []).forEach(l => { g.strokeStyle = l.color; g.setLineDash(l.dash || [3, 3]); g.beginPath(); g.moveTo(m.l, Y(l.y)); g.lineTo(m.l + pw, Y(l.y)); g.stroke(); g.setLineDash([]); });
+    (spec.vlines || []).forEach(l => { g.strokeStyle = l.color; g.setLineDash(l.dash || [3, 3]); g.beginPath(); g.moveTo(X(l.x), m.t); g.lineTo(X(l.x), m.t + ph); g.stroke(); g.setLineDash([]); });
+    (spec.series || []).forEach(s => {
+      const ok = p => isFinite(p[0]) && isFinite(p[1]) && (!lx || p[1] > 0);
+      g.strokeStyle = s.color; g.fillStyle = s.color; g.lineWidth = s.width || 1.8; g.setLineDash(s.dash || []);
+      if (s.stem) {
+        s.points.forEach(p => { if (!ok(p)) return; g.beginPath(); g.moveTo(X(p[0]), Y(s.base)); g.lineTo(X(p[0]), Y(p[1])); g.stroke(); g.beginPath(); g.arc(X(p[0]), Y(p[1]), 2.6, 0, 7); g.fill(); });
+      } else if (s.dots) {
+        g.globalAlpha = s.alpha || 0.75;
+        s.points.forEach(p => { if (ok(p)) g.fillRect(X(p[0]) - 1, Y(p[1]) - 1, s.dots, s.dots); });
+        g.globalAlpha = 1;
+      } else {
+        g.beginPath(); let pen = false;
+        s.points.forEach(p => { if (!ok(p)) { pen = false; return; } if (pen) g.lineTo(X(p[0]), Y(p[1])); else { g.moveTo(X(p[0]), Y(p[1])); pen = true; } });
+        g.stroke();
+        if (s.marker) s.points.forEach(p => { if (ok(p)) { g.beginPath(); g.arc(X(p[0]), Y(p[1]), s.marker, 0, 7); s.hollow ? g.stroke() : g.fill(); } });
+      }
+      g.setLineDash([]);
+    });
+    g.restore();
+    g.fillStyle = C.muted; g.textAlign = 'center'; g.font = '11.5px Inter, system-ui, sans-serif';
+    g.fillText(spec.x.label || '', m.l + pw / 2, Hh - 6);
+    g.save(); g.translate(13, m.t + ph / 2); g.rotate(-Math.PI / 2); g.fillText(spec.y.label || '', 0, 0); g.restore();
+    const items = (spec.series || []).filter(s => s.label);
+    if (items.length) {
+      g.font = '11px Inter, system-ui, sans-serif';
+      const lw = Math.max.apply(null, items.map(s => g.measureText(s.label).width)) + 34, lh = 16;
+      const pos = spec.legend || 'bl';
+      const bx = pos[1] === 'l' ? m.l + 8 : m.l + pw - lw - 8, by = pos[0] === 'b' ? m.t + ph - items.length * lh - 10 : m.t + 8;
+      g.fillStyle = 'rgba(10,14,20,0.82)'; g.fillRect(bx, by, lw, items.length * lh + 6);
+      g.strokeStyle = C.axis; g.strokeRect(bx + 0.5, by + 0.5, lw, items.length * lh + 6);
+      items.forEach((s, i) => {
+        const yy = by + 12 + i * lh;
+        g.strokeStyle = s.color; g.fillStyle = s.color; g.lineWidth = 2; g.setLineDash(s.dash || []);
+        if (s.dots || s.stem) { g.fillRect(bx + 10, yy - 3, 6, 6); } else { g.beginPath(); g.moveTo(bx + 6, yy); g.lineTo(bx + 22, yy); g.stroke(); }
+        g.setLineDash([]); g.fillStyle = C.text; g.textAlign = 'left'; g.fillText(s.label, bx + 28, yy + 4);
+      });
+    }
+  };
+
+  /* ================================================================ DOM helpers */
+  function h(tag, attrs, children) {
+    const n = document.createElement(tag);
+    Object.entries(attrs || {}).forEach(([k, v]) => {
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else if (k === 'html') n.innerHTML = v;
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (v !== false && v != null) n.setAttribute(k, v === true ? '' : v);
+    });
+    (children || []).forEach(c => n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+    return n;
+  }
+  function seg(label, options, value, onChange) {
+    const wrap = h('div', { class: 'plab-field' }, [h('span', { class: 'plab-label', text: label })]);
+    const row = h('div', { class: 'plab-seg', role: 'group', 'aria-label': label });
+    const buttons = options.map(([v, text]) => {
+      const b = h('button', { type: 'button', class: 'plab-segbtn' + (v === value ? ' on' : ''), 'aria-pressed': String(v === value), text });
+      b.addEventListener('click', () => { if (b.disabled) return; buttons.forEach(o => { o.classList.remove('on'); o.setAttribute('aria-pressed', 'false'); }); b.classList.add('on'); b.setAttribute('aria-pressed', 'true'); onChange(v); });
+      b._value = v;
+      row.appendChild(b);
+      return b;
+    });
+    wrap.appendChild(row);
+    wrap._buttons = buttons;
+    return wrap;
+  }
+  function range(label, min, max, step, value, fmt, onInput) {
+    const out = h('output', { text: fmt(value) });
+    const inp = h('input', { type: 'range', min, max, step, value, 'aria-label': label });
+    inp.addEventListener('input', () => { out.textContent = fmt(+inp.value); onInput(+inp.value); });
+    return h('label', { class: 'plab-field' }, [h('span', { class: 'plab-label' }, [label + ' ', out]), inp]);
+  }
+  function select(label, options, value, onChange) {
+    const s = h('select', { 'aria-label': label });
+    options.forEach(([v, text]) => { const o = h('option', { value: String(v), text }); if (v === value) o.selected = true; s.appendChild(o); });
+    s.addEventListener('change', () => onChange(isNaN(+s.value) ? s.value : +s.value));
+    return h('label', { class: 'plab-field' }, [h('span', { class: 'plab-label', text: label }), s]);
+  }
+  function stat(key) {
+    const v = h('b', { class: 'plab-v', text: '...' }), s = h('span', { class: 'plab-s', text: '' });
+    return { node: h('div', { class: 'plab-stat' }, [h('span', { class: 'plab-k', text: key }), v, s]), v, s };
+  }
+  const fmtDb = v => (isFinite(v) ? v.toFixed(2) : '...') + ' dB';
+  const fmtBer = v => v === 0 ? '0' : v.toExponential(1).replace('e-', 'e-');
+
+  /* ================================================================ transmitter view */
+  function transmitterView(root, redrawers) {
+    const st = { method: 'rcf', N: 128, L: 4, order: 4, cr: 3, passes: 4, R: 0.5, U: 16, V: 4, W: 2, seed: 7 };
+    const METHOD = {
+      rcf: 'Repeated clipping and filtering (thesis chapter 3)', clip: 'Clipping only, no filter (for comparison)',
+      rct: 'Rooting companding |x|^R (thesis chapter 3)', slm: 'Selected mapping (my ETASR 2021 paper)', pts: 'Partial transmit sequences (my JASA 2019 and 2020 papers)',
+    };
+    const note = h('p', { class: 'plab-note' });
+    const params = {
+      cr: range('Clipping ratio CR', 1.5, 4, 0.25, st.cr, v => v.toFixed(2) + ' (' + (10 * Math.log10(v)).toFixed(2) + ' dB)', v => { st.cr = v; restart(); }),
+      passes: seg('Clip and filter passes', [[1, '1'], [2, '2'], [3, '3'], [4, '4']], st.passes, v => { st.passes = v; restart(); }),
+      R: range('Rooting exponent R', 0.3, 0.9, 0.05, st.R, v => v.toFixed(2), v => { st.R = v; restart(); }),
+      U: seg('Candidates U', [[2, '2'], [4, '4'], [8, '8'], [16, '16'], [32, '32']], st.U, v => { st.U = v; restart(); }),
+      V: seg('Subblocks V', [[2, '2'], [4, '4'], [8, '8']], st.V, v => { st.V = v; syncW(); restart(); }),
+      W: seg('Phase factors W', [[2, '±1'], [4, '±1, ±j']], st.W, v => { st.W = v; restart(); }),
+    };
+    const show = { rcf: ['cr', 'passes'], clip: ['cr'], rct: ['R'], slm: ['U'], pts: ['V', 'W'] };
+    function syncW() {
+      const four = params.W._buttons[1];
+      four.disabled = st.V === 8;
+      if (st.V === 8 && st.W === 4) { st.W = 2; params.W._buttons[0].click(); }
+    }
+    function syncParams() {
+      Object.entries(params).forEach(([k, node]) => { node.style.display = show[st.method].includes(k) ? '' : 'none'; });
+      note.textContent = {
+        rcf: 'Thesis setting: 128 subcarriers, oversampling I = 2, CR = 3 (4.77 dB) and four passes.',
+        clip: 'One hard clip with no filter: the peaks go, but the spectrum spreads (see the spectrum plot).',
+        rct: 'The receiver undoes the companding with |y|^(1/R), which also stretches the noise.',
+        slm: 'The transmitter sends log2(U) bits of side information so the receiver can undo the chosen rotation.',
+        pts: 'Exhaustive search over W^(V-1) phase combinations; side information is (V-1) log2(W) bits.',
+      }[st.method];
+    }
+    const controls = h('div', { class: 'plab-controls' }, [
+      seg('Method', [['rcf', 'RCF'], ['clip', 'Clipping'], ['rct', 'Rooting'], ['slm', 'SLM'], ['pts', 'PTS']], st.method, v => { st.method = v; syncParams(); restart(); }),
+      select('Subcarriers N', [[64, '64'], [128, '128'], [256, '256'], [512, '512'], [1024, '1024']], st.N, v => { st.N = v; restart(); }),
+      select('Oversampling I', [[1, '1 (Nyquist rate)'], [2, '2'], [4, '4 (accurate peaks)']], st.L, v => { st.L = v; restart(); }),
+      select('Modulation', [[4, 'QPSK'], [16, '16-QAM'], [64, '64-QAM']], st.order, v => { st.order = v; restart(); }),
+      params.cr, params.passes, params.R, params.U, params.V, params.W, note,
+      h('button', { type: 'button', class: 'plab-btn', text: 'New random data', onclick: () => { st.seed++; restart(); } }),
+    ]);
+    const s1 = stat('PAPR at CCDF 10⁻³'), s2 = stat('Amplifier efficiency'), s3 = stat('In-band distortion'), s4 = stat('Cost');
+    const ccdf = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'CCDF of the PAPR' });
+    const progress = h('div', { class: 'plab-progress' });
+    const env = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Envelope of one OFDM symbol' });
+    const spec = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Power spectrum' });
+    root.appendChild(h('div', { class: 'plab-layout' }, [controls, h('div', { class: 'plab-main' }, [
+      h('div', { class: 'plab-stats' }, [s1.node, s2.node, s3.node, s4.node]), ccdf, progress])]));
+    root.appendChild(h('div', { class: 'plab-pair' }, [env, spec]));
+    const pCcdf = new Plot(ccdf, 300), pEnv = new Plot(env, 220), pSpec = new Plot(spec, 220);
+    redrawers.push(() => { pCcdf.draw(); pEnv.draw(); pSpec.draw(); });
+
+    let job = null;
+    function restart() {
+      if (job) job.cancelled = true;
+      const size = st.N * st.L, q = qam(st.order), rand = mulberry32(1000 + st.seed * 7919 + st.N);
+      const cands = st.method === 'slm' ? st.U : st.method === 'pts' ? Math.pow(st.W, st.V - 1) + st.V : st.method === 'rcf' ? 1 + 2 * st.passes : 1;
+      const target = Math.min(4000, Math.max(2000, Math.floor(6e7 / (size * cands))));
+      const phaseIndex = st.method === 'slm' ? Array.from({ length: st.U }, (_, u) => Array.from({ length: st.N }, () => (u === 0 ? 0 : Math.floor(rand() * 4)))) : null;
+      job = { cancelled: false, done: 0, target, orig: [], proc: [], sxx: 0, sxy_re: 0, syy: 0, oob: 0, all: 0,
+        specO: new Float64Array(size), specP: new Float64Array(size), specCount: 0, env: null, envPeak: -1 };
+      const J = job;
+      function step() {
+        if (J.cancelled) return;
+        const t0 = performance.now();
+        while (J.done < J.target && performance.now() - t0 < 14) {
+          const bits = randomBits(rand, st.N * q.k), X = modulate(bits, q);
+          const x = toTime(X.re, X.im, size), pO = paprDb(x.re, x.im);
+          let y, pP;
+          if (st.method === 'rcf' || st.method === 'clip') {
+            y = { re: Float64Array.from(x.re), im: Float64Array.from(x.im) };
+            if (st.method === 'rcf') rcfInPlace(y.re, y.im, st.N, st.cr, st.passes); else clipInPlace(y.re, y.im, st.cr);
+            pP = paprDb(y.re, y.im);
+          } else if (st.method === 'rct') {
+            y = { re: Float64Array.from(x.re), im: Float64Array.from(x.im) }; rootInPlace(y.re, y.im, st.R); pP = paprDb(y.re, y.im);
+          } else if (st.method === 'slm') { const r = slmBest(X, phaseIndex, size); y = r.x; pP = r.papr; }
+          else { const r = ptsBest(X, st.V, st.W, size); y = r.x; pP = r.papr; }
+          J.orig.push(pO); J.proc.push(pP);
+          if (st.method === 'rcf' || st.method === 'clip' || st.method === 'rct') {
+            const Y = toFreq(y.re, y.im, st.N);
+            for (let k = 0; k < st.N; k++) { J.sxx += X.re[k] * X.re[k] + X.im[k] * X.im[k]; J.sxy_re += X.re[k] * Y.re[k] + X.im[k] * Y.im[k]; J.syy += Y.re[k] * Y.re[k] + Y.im[k] * Y.im[k]; }
+          }
+          if (J.specCount < 300) {
+            const a = Float64Array.from(x.re), b = Float64Array.from(x.im), c = Float64Array.from(y.re), d = Float64Array.from(y.im);
+            fft(a, b, false); fft(c, d, false);
+            const h2 = st.N >> 1;
+            for (let k = 0; k < size; k++) {
+              const po = a[k] * a[k] + b[k] * b[k], pp = c[k] * c[k] + d[k] * d[k];
+              J.specO[k] += po; J.specP[k] += pp; J.all += pp;
+              if (k >= h2 && k < size - (st.N - h2)) J.oob += pp;
+            }
+            J.specCount++;
+          }
+          if (J.done < 60 && pO > J.envPeak) { J.envPeak = pO; J.env = { x, y }; }
+          J.done++;
+        }
+        render(J, size);
+        if (J.done < J.target) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function render(J, size) {
+      const so = J.orig.slice().sort((a, b) => a - b), sp = J.proc.slice().sort((a, b) => a - b);
+      const po = quantile(so, 1 - 1e-3), pp = quantile(sp, 1 - 1e-3);
+      s1.v.textContent = fmtDb(pp);
+      s1.s.textContent = 'from ' + fmtDb(po) + ', ' + (pp - po >= 0 ? '+' : '') + (pp - po).toFixed(2) + ' dB';
+      const eo = classB(po), ep = classB(pp);
+      s2.v.textContent = ep.toFixed(1) + '%';
+      s2.s.textContent = 'from ' + eo.toFixed(1) + '%: ideal class B, battery ' + (ep / eo).toFixed(2) + 'x';
+      if (st.method === 'slm' || st.method === 'pts') {
+        s3.v.textContent = 'none';
+        s3.s.textContent = 'distortionless: the data are only rotated';
+        const bits = st.method === 'slm' ? Math.log2(st.U) : (st.V - 1) * Math.log2(st.W);
+        s4.v.textContent = bits + ' side bits';
+        s4.s.textContent = st.method === 'slm' ? st.U + ' IFFTs per symbol' : st.V + ' IFFTs, ' + Math.pow(st.W, st.V - 1) + ' combinations';
+      } else {
+        const a = J.sxy_re / J.sxx, dist = Math.max(J.syy - a * a * J.sxx, 1e-30), sdr = 10 * Math.log10(a * a * J.sxx / dist);
+        s3.v.textContent = isFinite(sdr) ? sdr.toFixed(1) + ' dB SDR' : '...';
+        s3.s.textContent = 'signal to distortion ratio on the subcarriers';
+        const oob = J.all > 0 ? 10 * Math.log10(Math.max(J.oob / J.all, 1e-30)) : NaN;
+        if (st.L === 1) { s4.v.textContent = 'hidden at I = 1'; s4.s.textContent = 'oversample to see out-of-band power'; }
+        else if (J.oob / J.all < 1e-12) { s4.v.textContent = 'no regrowth'; s4.s.textContent = st.method === 'rcf' ? (1 + 2 * st.passes) + ' FFT operations per symbol' : ''; }
+        else { s4.v.textContent = oob.toFixed(1) + ' dB'; s4.s.textContent = 'power pushed out of band (spectral regrowth)'; }
+      }
+      progress.textContent = 'Simulated ' + J.done.toLocaleString() + ' of ' + J.target.toLocaleString() + ' OFDM symbols, ' + st.N + ' subcarriers, ' + size + ' samples each';
+      const series = [
+        { points: ccdfCurve(so, GRID), color: C.cyan, label: 'Original OFDM' },
+        { points: ccdfCurve(sp, GRID), color: C.orange, label: METHOD[st.method].split(' (')[0] },
+      ];
+      if (st.L !== 2) {
+        const a = st.L === 1 ? 1 : 2.8;
+        series.push({ points: GRID.map(z => [z, 1 - Math.pow(1 - Math.exp(-Math.pow(10, z / 10)), a * st.N)]), color: C.muted, dash: [4, 4], width: 1.2, label: st.L === 1 ? 'Theory, Nyquist rate' : 'Theory, 2.8N approximation' });
+      }
+      pCcdf.draw({ title: METHOD[st.method], x: { min: 2, max: 13, label: 'PAPR threshold z (dB)' }, y: { min: 1e-3, max: 1, log: true, label: 'Pr[PAPR > z]' }, series, legend: 'bl' });
+      if (J.env) {
+        const e = J.env, pts = (s, arr) => Array.from({ length: size }, (_, t) => [t / st.L, Math.hypot(arr.re[t], arr.im[t])]);
+        const clipLevel = st.method === 'rcf' || st.method === 'clip' ? Math.sqrt(st.cr) : null;
+        const ymax = Math.max(1, Math.ceil(Math.max.apply(null, pts(0, e.x).map(p => p[1])) + 0.2));
+        pEnv.draw({ title: 'The worst of the first 60 symbols', x: { min: 0, max: st.N, label: 'sample (Nyquist rate units)' },
+          y: { min: 0, max: ymax, label: '|x(t)| / RMS' },
+          hlines: clipLevel ? [{ y: clipLevel, color: C.muted }] : [],
+          series: [{ points: pts(0, e.x), color: C.cyan, width: 1.1, label: 'original' }, { points: pts(0, e.y), color: C.orange, width: 1.1, label: 'after ' + st.method.toUpperCase() }], legend: 'tr' });
+      }
+      if (J.specCount) {
+        const specPts = arr => {
+          const out = [], n = size;
+          let ref = 0; for (let k = 0; k < n; k++) ref = Math.max(ref, J.specO[k]);
+          for (let i = 0; i < n; i++) { const k = (i + n / 2) % n; out.push([(i - n / 2) / (n / 2), 10 * Math.log10(Math.max(arr[k] / ref, 1e-12))]); }
+          return out;
+        };
+        pSpec.draw({ title: 'Average power spectrum', x: { min: -1, max: 1, label: 'frequency / (fs / 2)' }, y: { min: -60, max: 5, label: 'dB' },
+          bands: [{ x0: -1 / st.L, x1: 1 / st.L, color: 'rgba(57,210,255,0.06)' }],
+          series: [{ points: specPts(J.specP), color: C.orange, width: 1.1, label: 'after ' + st.method.toUpperCase() }, { points: specPts(J.specO), color: C.cyan, width: 1.1, label: 'original' }], legend: 'bl' });
+      }
+    }
+    syncParams(); syncW();
+    return { start: restart };
+  }
+
+  /* ================================================================ receiver view */
+  function receiverView(root, data, redrawers) {
+    const st = { channel: 'bellhop', order: 64, ibo: 5, snr: 30, passes: 3, model: 'net', seed: 3 };
+    const U = data.uwa, N = U.subcarriers, size = N * 4;
+    const Hb = channelResponse(data.channel.arrivals, N, U.bandwidth_hz / N, U.centre_hz);
+    const Hf = { re: new Float64Array(N).fill(1), im: new Float64Array(N) };
+    const nets = {}; Object.keys(data.networks).forEach(k => { nets[k] = new Network(data.networks[k].weights); });
+    const controls = h('div', { class: 'plab-controls' }, [
+      seg('Channel', [['awgn', 'White noise'], ['bellhop', 'BELLHOP 2 km']], st.channel, v => { st.channel = v; restart(); }),
+      seg('Amplifier back-off', [[3, '3 dB'], [5, '5 dB'], [7, '7 dB']], st.ibo, v => { st.ibo = v; restart(); }),
+      select('Modulation', [[4, 'QPSK'], [16, '16-QAM'], [64, '64-QAM']], st.order, v => { st.order = v; restart(); }),
+      range('SNR per subcarrier', 10, 40, 1, st.snr, v => v + ' dB', v => { st.snr = v; restart(); }),
+      seg('FFB passes', [[0, '0'], [1, '1'], [2, '2'], [3, '3']], st.passes, v => { st.passes = v; restart(); }),
+      seg('Receiver model of the amplifier', [['net', 'Learned network'], ['exact', 'Exact equations']], st.model, v => { st.model = v; restart(); }),
+      h('p', { class: 'plab-note', text: 'The network is the 6-12-6 model trained in Python on 25,800 measured amplifier samples; its 162 weights run here unchanged.' }),
+      h('button', { type: 'button', class: 'plab-btn', text: 'New random data', onclick: () => { st.seed++; restart(); } }),
+    ]);
+    const s1 = stat('BER without FFB'), s2 = stat('BER with FFB'), s3 = stat('Improvement');
+    const cBer = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Bit error rate curves' });
+    const progress = h('div', { class: 'plab-progress' });
+    const cA = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Constellation before FFB' });
+    const cB = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Constellation after FFB' });
+    root.appendChild(h('div', { class: 'plab-layout' }, [controls, h('div', { class: 'plab-main' }, [h('div', { class: 'plab-stats three' }, [s1.node, s2.node, s3.node]), cBer, progress])]));
+    root.appendChild(h('div', { class: 'plab-pair' }, [cA, cB]));
+    const pBer = new Plot(cBer, 300), pA = new Plot(cA, 260), pB = new Plot(cB, 260);
+    redrawers.push(() => { pBer.draw(); pA.draw(); pB.draw(); });
+    let job = null;
+    function restart() {
+      if (job) job.cancelled = true;
+      const q = qam(st.order), rand = mulberry32(99 + st.seed * 104729), gauss = gaussian(rand);
+      const H = st.channel === 'awgn' ? Hf : Hb, info = data.networks[String(st.ibo)], sat = Math.pow(10, st.ibo / 20);
+      const model = st.model === 'net' ? { kind: 'net', net: nets[String(st.ibo)] } : { kind: 'exact', sat };
+      const alpha = st.model === 'net' ? info.alpha_network : info.alpha_exact;
+      const target = st.order === 4 ? 400 : 240;
+      job = { cancelled: false, done: 0, target, bits: 0, e0: 0, e1: 0, before: [], after: [] };
+      const J = job;
+      function step() {
+        if (J.cancelled) return;
+        const t0 = performance.now();
+        while (J.done < J.target && performance.now() - t0 < 16) {
+          const batch = 4, bitsList = [], Ys = [];
+          const Ytx = [];
+          for (let b = 0; b < batch; b++) {
+            const bits = randomBits(rand, N * q.k), X = modulate(bits, q), x = toTime(X.re, X.im, size);
+            rappInPlace(x.re, x.im, sat, 2);
+            bitsList.push(bits); Ytx.push(toFreq(x.re, x.im, N));
+          }
+          let es = 0; Ytx.forEach(Y => { for (let k = 0; k < N; k++) es += Y.re[k] * Y.re[k] + Y.im[k] * Y.im[k]; });
+          es /= batch * N;
+          const sd = Math.sqrt(es / Math.pow(10, st.snr / 10) / 2);
+          Ytx.forEach(Y => {
+            const r = new Float64Array(N), i = new Float64Array(N);
+            for (let k = 0; k < N; k++) { r[k] = H.re[k] * Y.re[k] - H.im[k] * Y.im[k] + sd * gauss(); i[k] = H.re[k] * Y.im[k] + H.im[k] * Y.re[k] + sd * gauss(); }
+            Ys.push({ re: r, im: i });
+          });
+          const out = ffb(Ys, H, q, model, alpha, size, st.passes);
+          bitsList.forEach((bits, s) => {
+            J.e0 += countBitErrors(out.first[s].re, out.first[s].im, bits, q);
+            J.e1 += countBitErrors(out.last[s].re, out.last[s].im, bits, q);
+            J.bits += bits.length;
+          });
+          if (J.before.length < 2400) {
+            const z = out.soft[0];
+            for (let k = 0; k < N && J.before.length < 2400; k += 1) {
+              const d = H.re[k] * H.re[k] + H.im[k] * H.im[k];
+              if (st.channel === 'bellhop' && d < 0.1) continue;
+              const zr = (Ys[0].re[k] * H.re[k] + Ys[0].im[k] * H.im[k]) / d / alpha, zi = (Ys[0].im[k] * H.re[k] - Ys[0].re[k] * H.im[k]) / d / alpha;
+              J.before.push([zr, zi]); J.after.push([z.re[k], z.im[k]]);
+            }
+          }
+          J.done += batch;
+        }
+        render(J);
+        if (J.done < J.target) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    function render(J) {
+      const b0 = J.e0 / J.bits, b1 = J.e1 / J.bits;
+      s1.v.textContent = fmtBer(b0); s1.s.textContent = J.e0.toLocaleString() + ' errors in ' + J.bits.toLocaleString() + ' bits';
+      s2.v.textContent = fmtBer(b1); s2.s.textContent = st.passes + ' pass' + (st.passes === 1 ? '' : 'es') + ', ' + (st.model === 'net' ? 'learned network' : 'exact equations');
+      s3.v.textContent = J.e1 === 0 ? (J.e0 ? 'all errors removed' : 'no errors') : (b0 / b1).toFixed(1) + 'x fewer errors';
+      s3.s.textContent = J.e1 === 0 && J.e0 ? 'in ' + J.bits.toLocaleString() + ' bits' : 'live Monte Carlo at ' + st.snr + ' dB';
+      progress.textContent = 'Simulated ' + J.done + ' of ' + J.target + ' OFDM symbols (' + N + ' subcarriers, 6.25 kHz, 4x oversampled amplifier)';
+      const rc = data.receiver, snr = rc.snr_db, key = st.channel + '_ibo' + st.ibo;
+      const curve = name => rc.curves[name] ? snr.map((s, i) => [s, rc.curves[name][i]]) : null;
+      const series = [];
+      if (st.order === 64) {
+        const lin = curve(st.channel + '_linear'), none = curve(key + '_none'), nn = curve(key + '_ffb_nn_3');
+        if (none) series.push({ points: none, color: C.red, marker: 2.5, label: 'Python: without FFB' });
+        if (nn) series.push({ points: nn, color: C.green, marker: 2.5, label: 'Python: FFB, learned model' });
+        if (lin) series.push({ points: lin, color: C.cyan, dash: [5, 4], label: 'Python: linear amplifier' });
+      }
+      series.push({ points: [[st.snr, Math.max(b0, 1e-7)]], color: C.red, marker: 6, hollow: true, width: 2, label: 'live: without FFB' });
+      series.push({ points: [[st.snr, Math.max(b1, 1e-7)]], color: C.green, marker: 6, hollow: true, width: 2, label: 'live: with FFB' });
+      pBer.draw({ title: st.order === 64 ? '64-QAM bit error rate (curves: Python, 400 symbols per point)' : 'Live bit error rate (Python curves are for 64-QAM)',
+        x: { min: 10, max: 40, label: 'SNR per subcarrier (dB)' }, y: { min: 1e-6, max: 0.5, log: true, label: 'bit error rate' }, series, legend: 'bl' });
+      const lim = st.order === 4 ? 1.4 : 1.45;
+      const scatter = (pts, color, title) => ({ title, x: { min: -lim, max: lim, step: 0.5, label: 'in phase' }, y: { min: -lim, max: lim, step: 0.5, label: 'quadrature' }, series: [{ points: pts, dots: 2, color, alpha: 0.7 }] });
+      pA.draw(scatter(J.before, C.red, 'Before FFB (equalised, one symbol at a time)'));
+      pB.draw(scatter(J.after, C.green, 'After ' + st.passes + ' FFB pass' + (st.passes === 1 ? '' : 'es')));
+    }
+    return { start: restart };
+  }
+
+  /* ================================================================ channel view */
+  function channelView(root, data, redrawers) {
+    const ch = data.channel, g = ch.geometry, U = data.uwa;
+    const T = U.fft_points / U.fs_hz * 1000;   // 81.92 ms OFDM symbol
+    const st = { guard: 50 };
+    const s1 = stat('Energy after the guard'), s2 = stat('Guard overhead'), s3 = stat('First arrival check');
+    const cGeo = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Channel geometry and ray paths' });
+    const cArr = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'BELLHOP arrivals' });
+    const cH = h('canvas', { class: 'plab-canvas', role: 'img', 'aria-label': 'Channel frequency response' });
+    const controls = h('div', { class: 'plab-controls' }, [
+      range('Guard interval', 5, 150, 1, st.guard, v => v + ' ms', v => { st.guard = v; draw(); }),
+      h('p', { class: 'plab-note', html: 'BELLHOP channel of the chapter 4 link: ' + g.depth_m + ' m of water, source at ' + g.source_m + ' m, hydrophone at ' + g.receiver_m + ' m, ' + (g.range_m / 1000) + ' km apart, ' + (g.freq_hz / 1000) + ' kHz, sandy bottom (' + g.bottom.speed + ' m/s).' }),
+      h('p', { class: 'plab-note', text: 'Each OFDM symbol lasts ' + T.toFixed(2) + ' ms. Slide the guard interval to see how much of the multipath it captures and what it costs in airtime.' }),
+    ]);
+    root.appendChild(h('div', { class: 'plab-layout' }, [controls, h('div', { class: 'plab-main' }, [h('div', { class: 'plab-stats three' }, [s1.node, s2.node, s3.node]), cGeo])]));
+    root.appendChild(h('div', { class: 'plab-pair' }, [cArr, cH]));
+    const pArr = new Plot(cArr, 240), pH = new Plot(cH, 240);
+    function geometry() {
+      const cv = cGeo, dpr = window.devicePixelRatio || 1, W = Math.max(260, cv.clientWidth || 600), Hh = 230;
+      cv.width = W * dpr; cv.height = Hh * dpr; cv.style.height = Hh + 'px';
+      const c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, Hh);
+      const m = { l: 44, r: 14, t: 16, b: 30 }, pw = W - m.l - m.r, ph = Hh - m.t - m.b, D = g.depth_m, R = g.range_m;
+      const X = x => m.l + x / R * pw, Y = z => m.t + z / D * ph;
+      const grad = c.createLinearGradient(0, m.t, 0, m.t + ph); grad.addColorStop(0, '#0f2a3f'); grad.addColorStop(1, '#0a1622');
+      c.fillStyle = grad; c.fillRect(m.l, m.t, pw, ph);
+      c.fillStyle = '#3a2f22'; c.fillRect(m.l, m.t + ph, pw, 6);
+      c.strokeStyle = C.axis; c.strokeRect(m.l + 0.5, m.t + 0.5, pw, ph);
+      const strongest = ch.arrivals.slice().sort((a, b) => b.amp - a.amp).slice(0, 9);
+      strongest.forEach(a => {
+        const down = a.angle > 0, nt = a.top, nb = a.bottom, zs = g.source_m, zr = g.receiver_m;
+        let V;
+        if (nt + nb === 0) V = Math.abs(zr - zs);
+        else {
+          const firstPart = down ? D - zs : zs, lastBottom = down ? nb > nt : nb >= nt;
+          V = firstPart + (nt + nb - 1) * D + (lastBottom ? D - zr : zr);
+        }
+        c.strokeStyle = 'rgba(57,210,255,' + (0.25 + 0.65 * a.amp).toFixed(2) + ')'; c.lineWidth = 1 + 1.2 * a.amp;
+        c.beginPath(); c.moveTo(X(0), Y(zs));
+        let z = zs, dir = down ? 1 : -1, x = 0; const slope = V / R;
+        while (x < R - 1e-6) {
+          const toWall = dir > 0 ? (D - z) : z, dx = Math.min(toWall / slope, R - x);
+          x += dx; z += dir * dx * slope; c.lineTo(X(x), Y(z));
+          if (x < R - 1e-6) dir = -dir;
+        }
+        c.stroke();
+      });
+      c.fillStyle = C.orange; c.beginPath(); c.arc(X(0), Y(g.source_m), 5, 0, 7); c.fill();
+      c.fillStyle = C.green; c.fillRect(X(R) - 5, Y(g.receiver_m) - 5, 10, 10);
+      c.font = '11px Inter, system-ui, sans-serif';
+      const tag = (text, x, y, align, color) => {
+        c.textAlign = align;
+        const w = c.measureText(text).width, x0 = align === 'right' ? x - w : x;
+        c.fillStyle = 'rgba(10,14,20,0.78)'; c.fillRect(x0 - 3, y - 11, w + 6, 15);
+        c.fillStyle = color; c.fillText(text, x, y);
+      };
+      tag('source ' + g.source_m + ' m', X(0) + 9, Y(g.source_m) - 8, 'left', C.orange);
+      tag('hydrophone ' + g.receiver_m + ' m', X(R) - 9, Y(g.receiver_m) - 8, 'right', C.green);
+      tag('surface', m.l + 4, m.t + 13, 'left', C.muted);
+      tag('sandy bottom, ' + D + ' m', m.l + 4, m.t + ph - 5, 'left', C.muted);
+      c.fillStyle = C.muted; c.textAlign = 'left'; c.fillText('0 km', m.l, m.t + ph + 18);
+      c.textAlign = 'right'; c.fillText((R / 1000) + ' km', m.l + pw, m.t + ph + 18);
+      c.textAlign = 'center';
+      c.fillText(W < 560 ? '9 strongest of ' + ch.arrivals.length + ' paths, straight segments' : '9 strongest of ' + ch.arrivals.length + ' paths as straight segments; BELLHOP bends them with the sound speed', m.l + pw / 2, m.t + ph + 18);
+    }
+    function draw() {
+      const E = ch.arrivals.reduce((s, a) => s + a.amp * a.amp, 0);
+      const late = ch.arrivals.reduce((s, a) => s + (a.delay_ms > st.guard ? a.amp * a.amp : 0), 0) / E;
+      s1.v.textContent = (100 * late).toFixed(late < 0.01 ? 2 : 1) + '%';
+      s1.s.textContent = late > 0.05 ? 'spills into the next symbol (intersymbol interference)' : 'small enough to treat each subcarrier on its own';
+      s2.v.textContent = (100 * st.guard / (T + st.guard)).toFixed(0) + '% of airtime';
+      s2.s.textContent = st.guard + ' ms guard on ' + T.toFixed(1) + ' ms symbols';
+      s3.v.textContent = (ch.first_arrival_error_pct >= 0 ? '+' : '') + ch.first_arrival_error_pct.toFixed(3) + '%';
+      s3.s.textContent = ch.first_arrival_s.toFixed(4) + ' s vs ' + ch.straight_line_s.toFixed(4) + ' s straight line';
+      pArr.draw({ title: 'BELLHOP arrivals (rms delay spread ' + ch.rms_delay_ms.toFixed(1) + ' ms)', x: { min: 0, max: 240, label: 'delay after the first arrival (ms)' },
+        y: { min: -50, max: 3, label: 'amplitude (dB)' }, bands: [{ x0: 0, x1: st.guard, color: 'rgba(255,176,32,0.12)' }],
+        series: [{ points: ch.arrivals.map(a => [a.delay_ms, 20 * Math.log10(a.amp)]), stem: true, base: -50, color: C.cyan }] });
+      const f = ch.response_db.freq_hz, mag = ch.response_db.mag_db;
+      pH.draw({ title: 'Frequency response across the band', x: { min: f[0] / 1000, max: f[f.length - 1] / 1000, label: 'frequency (kHz)' },
+        y: { min: -30, max: 10, label: '|H(f)| (dB)' }, series: [{ points: f.map((v, i) => [v / 1000, mag[i]]), color: C.violet, width: 1.2 }] });
+    }
+    redrawers.push(() => { geometry(); pArr.draw(); pH.draw(); });
+    return { start: () => { geometry(); draw(); } };
+  }
+
+  /* ================================================================ mount */
+  function mount(root, data) {
+    root.innerHTML = '';
+    const checks = verify(data), passed = checks.filter(c => c.ok).length;
+    const badge = h('details', { class: 'plab-check' + (passed === checks.length ? ' ok' : ' bad') }, [
+      h('summary', { text: (passed === checks.length ? '✓ ' : '✗ ') + 'Browser engine matches the Python reference: ' + passed + '/' + checks.length + ' checks' }),
+      h('ul', {}, checks.map(c => h('li', { text: (c.ok ? '✓ ' : '✗ ') + c.name + ' (' + c.detail + ')' }))),
+    ]);
+    const tabs = [['tx', 'Transmitter', 'PAPR'], ['rx', 'Receiver', 'FFB'], ['ch', 'Channel', 'BELLHOP']];
+    const bar = h('div', { class: 'plab-tabs', role: 'tablist' });
+    const views = {}, redrawers = [], started = {};
+    const ctl = {};
+    root.appendChild(badge); root.appendChild(bar);
+    tabs.forEach(([k, label, sub], i) => {
+      const view = h('div', { class: 'plab-view', role: 'tabpanel', id: 'plab-' + k });
+      if (i) view.hidden = true;
+      views[k] = view;
+      const b = h('button', { type: 'button', role: 'tab', class: 'plab-tab' + (i ? '' : ' on'), 'aria-selected': String(!i), 'aria-controls': 'plab-' + k }, [label, h('span', { class: 'plab-tab-sub', text: ': ' + sub })]);
+      b.addEventListener('click', () => {
+        bar.querySelectorAll('.plab-tab').forEach(t => { t.classList.remove('on'); t.setAttribute('aria-selected', 'false'); });
+        b.classList.add('on'); b.setAttribute('aria-selected', 'true');
+        Object.entries(views).forEach(([kk, v]) => { v.hidden = kk !== k; });
+        if (!started[k]) { started[k] = true; ctl[k].start(); } else redrawers.forEach(fn => fn());
+      });
+      bar.appendChild(b);
+      root.appendChild(view);
+    });
+    ctl.tx = transmitterView(views.tx, redrawers);
+    ctl.rx = receiverView(views.rx, data, redrawers);
+    ctl.ch = channelView(views.ch, data, redrawers);
+    started.tx = true; ctl.tx.start();
+    let t = null;
+    const onResize = () => { clearTimeout(t); t = setTimeout(() => redrawers.forEach(fn => fn()), 120); };
+    if (window.ResizeObserver) new ResizeObserver(onResize).observe(root); else window.addEventListener('resize', onResize);
+    return { checks };
+  }
+
+  window.PaprLab = { mount, verify, _engine: { fft, toTime, toFreq, paprDb, qam, modulate, channelResponse } };
+})();
+
+</script>
+<script>
+(function () {
+  var root = document.getElementById('papr-lab');
+  try {
+    var data = JSON.parse(document.getElementById('paprlab-data').textContent);
+    window.PaprLab.mount(root, data);
+  } catch (err) {
+    root.innerHTML = '<div class="plab-loading">The lab could not start (' + String(err && err.message || err) + '). The figures below show the same results.</div>';
+  }
+})();
+</script>
+
+</body>
+</html>

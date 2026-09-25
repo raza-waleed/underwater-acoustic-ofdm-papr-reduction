@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+results_run.log
+results/results_first_run.json
+# BELLHOP is Michael B. Porter's Acoustics Toolbox: run it locally, never commit it
+bellhop.exe
+*.prt
+.claude/

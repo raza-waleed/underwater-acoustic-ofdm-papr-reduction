@@ -1,0 +1,157 @@
+/* Page styles for the PAPR thesis page, layered on the waleedraza.dev design
+   system (report/site-style.css is a copy of the site's style.css). The hero,
+   concept cards and stat cards follow the site's Power Grid page. */
+.sim-hero { padding: 72px 0 40px; border-bottom: 1px solid var(--line); }
+.sim-hero .eyebrow { margin-bottom: 14px; }
+.sim-hero h1 { font-size: clamp(1.9rem, 4.2vw, 2.7rem); margin: 0 0 16px; letter-spacing: -0.5px; max-width: 24ch; }
+.sim-hero .summary { max-width: 74ch; color: var(--muted); font-size: 1.02rem; }
+.stack-row { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 10px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 24px;
+}
+.back-link:hover { color: var(--accent-2); text-decoration: none; }
+.section-lead { color: var(--muted); max-width: 75ch; margin-top: -16px; margin-bottom: 28px; }
+.wrap.wide { max-width: 1180px; }
+
+.prose { color: #c9d3df; }
+.prose p { margin: 0 0 16px; }
+.prose strong { color: var(--text); font-weight: 600; }
+h3.subhead {
+  font-family: var(--mono); font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--accent-2); font-weight: 500; margin: 36px 0 14px;
+}
+code {
+  font-family: var(--mono); font-size: 0.86em; color: var(--text);
+  background: var(--bg-panel-2); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px;
+}
+sup, sub { line-height: 0; }
+
+/* Concept cards (as on the Power Grid page) */
+.concept-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin: 8px 0 8px; }
+.concept-grid.three { grid-template-columns: repeat(3, 1fr); }
+.concept-grid.two { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 980px) { .concept-grid, .concept-grid.three { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .concept-grid, .concept-grid.three, .concept-grid.two { grid-template-columns: 1fr; } }
+.concept-card {
+  background: var(--bg-panel); border: 1px solid var(--line-bright); border-radius: 8px;
+  padding: 20px 18px; position: relative; overflow: hidden; box-shadow: var(--shadow-sm);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.concept-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.concept-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--card-color, var(--accent-2)); box-shadow: 0 0 12px var(--card-color, var(--accent-2));
+}
+.concept-tag {
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--card-color, var(--accent-2)); display: block; margin-bottom: 10px;
+}
+.concept-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.concept-card p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.concept-card .result { font-family: var(--mono); font-size: 0.72rem; color: var(--text); margin-top: 14px; display: block; line-height: 1.5; }
+.concept-card .result::before { content: "Result: "; color: var(--muted); }
+
+/* Stat cards (as on the Power Grid page) */
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 8px; }
+@media (max-width: 900px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .stat-grid { grid-template-columns: 1fr 1fr; } }
+.stat-card {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-radius: 6px;
+  padding: 16px 14px; box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease);
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-card .num { font-family: var(--display); font-size: 1.7rem; color: var(--accent-2); font-weight: 700; line-height: 1.2; }
+.stat-card .num.amber { color: var(--accent); }
+.stat-card .lbl { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; line-height: 1.45; }
+
+/* Figures */
+figure.fig {
+  margin: 24px 0; background: var(--bg-panel); border: 1px solid var(--line-bright); border-radius: 8px;
+  padding: 12px; box-shadow: var(--shadow-sm);
+}
+figure.fig img, figure.fig svg { width: 100%; height: auto; display: block; border-radius: 4px; }
+figure.fig figcaption { font-family: var(--mono); font-size: 0.74rem; color: var(--muted); margin: 10px 4px 2px; line-height: 1.6; }
+figure.fig figcaption b { color: var(--accent-2); font-weight: 500; }
+
+/* Callouts */
+.callout {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-left: 3px solid var(--callout, var(--accent-2));
+  border-radius: 6px; padding: 14px 18px; margin: 18px 0; font-size: 0.95rem; color: #c9d3df; box-shadow: var(--shadow-sm);
+}
+.callout .k {
+  display: block; font-family: var(--mono); font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--callout, var(--accent-2)); margin-bottom: 6px; font-weight: 500;
+}
+.callout.result { --callout: #00e68a; }
+.callout.model { --callout: var(--accent); }
+.callout.note { --callout: #a78bfa; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+
+.equation {
+  font-family: var(--mono); font-size: 0.9rem; color: var(--text); background: var(--bg-panel-2);
+  border: 1px solid var(--line-bright); border-radius: 6px; padding: 12px 16px; margin: 16px 0; text-align: center; overflow-x: auto;
+}
+
+/* Algorithm steps (the Power Grid page's numbered drill list) */
+ol.steps { list-style: none; margin: 8px 0 24px; padding: 0; counter-reset: step; }
+ol.steps li {
+  counter-increment: step; position: relative;
+  padding: 12px 0 12px 52px; border-top: 1px solid var(--line); color: #c9d3df; font-size: 0.95rem;
+}
+ol.steps li:last-child { border-bottom: 1px solid var(--line); }
+ol.steps li::before {
+  content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 12px;
+  font-family: var(--mono); font-size: 0.8rem; color: var(--accent);
+}
+
+/* Tables */
+.table-wrap {
+  overflow-x: auto; margin: 12px 0 20px; border: 1px solid var(--line-bright); border-radius: 8px;
+  background: var(--bg-panel); box-shadow: var(--shadow-sm);
+}
+table.data { border-collapse: collapse; width: 100%; font-size: 0.84rem; font-variant-numeric: tabular-nums; }
+table.data th {
+  text-align: left; font-family: var(--mono); font-size: 0.68rem; font-weight: 500; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--muted); background: var(--bg-panel-2); padding: 10px 12px; border-bottom: 1px solid var(--line-bright);
+}
+table.data td { padding: 8px 12px; border-top: 1px solid var(--line); color: #c9d3df; vertical-align: top; }
+table.data tbody tr:hover td { background: rgba(57, 210, 255, 0.035); }
+table.data td:first-child { color: var(--text); }
+
+/* Block diagram */
+svg.diagram { background: var(--bg-panel-2); }
+.dg-head { fill: var(--accent); font: 500 11px var(--mono); letter-spacing: 0.1em; }
+.dg-box rect { fill: #111b29; stroke: var(--line-bright); stroke-width: 1.2; }
+.dg-box text { fill: var(--text); font: 600 12px var(--body); text-anchor: middle; }
+.dg-box text.dg-small { fill: var(--muted); font: 400 10.5px var(--body); }
+.dg-box.hi-amber rect { stroke: var(--accent); }
+.dg-box.hi-cyan rect { stroke: var(--accent-2); }
+.dg-box.hi-green rect { stroke: #00e68a; }
+.dg-arrow line { stroke: var(--muted); stroke-width: 1.4; marker-end: url(#ah); }
+
+/* Code and references */
+pre.cmd {
+  font-family: var(--mono); font-size: 0.82rem; color: var(--text); background: var(--bg-panel-2);
+  border: 1px solid var(--line-bright); border-radius: 6px; padding: 14px 16px; overflow-x: auto; margin: 16px 0; line-height: 1.7;
+}
+.nomen { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px 20px; font-size: 0.86rem; color: var(--muted); margin-bottom: 8px; }
+.nomen b { font-family: var(--mono); color: var(--accent-2); font-weight: 500; margin-right: 8px; }
+.refs li { font-size: 0.86rem; }
+.refs i { color: var(--text); font-style: italic; }
+.availability {
+  background: var(--bg-panel-2); border: 1px solid var(--line-bright); border-radius: 6px;
+  padding: 16px 20px; font-size: 0.88rem; color: var(--muted); margin-top: 18px;
+}
+.availability strong { color: var(--text); }
+
+.plab-loading {
+  border: 1px solid var(--line-bright); border-radius: 8px; background: var(--bg-panel);
+  padding: 48px 24px; text-align: center; color: var(--muted); font-family: var(--mono); font-size: 0.85rem;
+}
+
+@media (max-width: 640px) {
+  .sim-hero { padding: 48px 0 32px; }
+  figure.fig { padding: 8px; margin: 18px 0; }
+  .callout { padding: 12px 14px; }
+}

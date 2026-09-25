@@ -1,0 +1,53 @@
+/* PAPR lab. Colours come from the host page's design tokens (waleedraza.dev
+   style.css), with fallbacks so the lab also stands alone. */
+.plab-root {
+  --plab-panel: var(--bg-panel-2, #0d131e);
+  --plab-line: var(--line-bright, #2a3648);
+  --plab-cyan: var(--accent-2, #39d2ff);
+  --plab-amber: var(--accent, #ffb020);
+}
+.plab-check { font-family: var(--mono); font-size: 0.8rem; margin: 0 0 14px; }
+.plab-check summary { cursor: pointer; color: #00e68a; }
+.plab-check.bad summary { color: #f87171; }
+.plab-check ul { margin: 8px 0 0; padding-left: 18px; color: var(--muted); list-style: none; }
+.plab-check li { margin: 2px 0; }
+.plab-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--plab-line); margin-bottom: 16px; overflow-x: auto; }
+.plab-tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: 600 0.9rem var(--display); padding: 10px 14px; cursor: pointer; white-space: nowrap; }
+.plab-tab:hover { color: var(--text); }
+.plab-tab.on { color: var(--plab-cyan); border-bottom-color: var(--plab-cyan); }
+.plab-tab:focus-visible, .plab-segbtn:focus-visible, .plab-btn:focus-visible { outline: 2px solid var(--plab-cyan); outline-offset: 2px; }
+.plab-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 18px; align-items: start; }
+.plab-controls { display: flex; flex-direction: column; gap: 12px; }
+.plab-field { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.plab-label { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+.plab-label output { color: var(--text); text-transform: none; letter-spacing: 0; }
+.plab-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.plab-segbtn { flex: 1 1 auto; background: var(--plab-panel); border: 1px solid var(--plab-line); color: var(--text); border-radius: 4px; padding: 5px 8px; font: 500 0.78rem var(--mono); cursor: pointer; }
+.plab-segbtn:hover { border-color: var(--muted); }
+.plab-segbtn.on { border-color: var(--plab-cyan); color: var(--plab-cyan); background: rgba(57, 210, 255, 0.1); }
+.plab-segbtn:disabled { opacity: 0.35; cursor: not-allowed; }
+.plab-controls select { background: var(--plab-panel); color: var(--text); border: 1px solid var(--plab-line); border-radius: 4px; padding: 6px 8px; font: 0.82rem var(--mono); }
+.plab-controls input[type=range] { width: 100%; accent-color: var(--plab-cyan); }
+.plab-note { font-size: 0.78rem; color: var(--muted); margin: 0; line-height: 1.45; }
+.plab-btn { background: rgba(255, 176, 32, 0.1); border: 1px solid var(--plab-amber); color: var(--plab-amber); border-radius: 4px; padding: 7px 10px; font: 600 0.8rem var(--mono); cursor: pointer; }
+.plab-btn:hover { background: rgba(255, 176, 32, 0.18); }
+.plab-main { min-width: 0; }
+.plab-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.plab-stats.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.plab-stat { background: var(--plab-panel); border: 1px solid var(--plab-line); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.plab-k { font-size: 0.66rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: var(--mono); }
+.plab-v { font: 600 1.02rem var(--display); color: var(--text); overflow-wrap: anywhere; }
+.plab-s { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
+.plab-canvas { display: block; width: 100%; border-radius: 4px; }
+.plab-progress { font: 0.7rem var(--mono); color: var(--muted); margin-top: 6px; }
+.plab-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.plab-noscript { color: var(--muted); font-size: 0.9rem; }
+@media (max-width: 520px) {
+  .plab-tab { padding: 8px 10px; font-size: 0.85rem; }
+  .plab-tab-sub { display: none; }
+}
+@media (max-width: 760px) {
+  .plab-layout { grid-template-columns: minmax(0, 1fr); }
+  .plab-stats, .plab-stats.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .plab-pair { grid-template-columns: minmax(0, 1fr); }
+}
